@@ -1,0 +1,2 @@
+# No third-party Python packages are required for V1.
+# config.yaml intentionally contains JSON-compatible YAML and is read by the standard library.

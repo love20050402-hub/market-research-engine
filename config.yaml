@@ -1,0 +1,70 @@
+{
+  "hackernews": {
+    "endpoint": "https://hn.algolia.com/api/v1/search_by_date",
+    "query": "wish",
+    "tags": "ask_hn",
+    "hits_per_page": 50,
+    "timeout_seconds": 30,
+    "user_agent": "market-research-engine/1.0"
+  },
+  "reddit": {
+    "enabled": true,
+    "token_endpoint": "https://www.reddit.com/api/v1/access_token",
+    "api_base_url": "https://oauth.reddit.com",
+    "search_path": "/search",
+    "queries": [
+      "how do you deal with",
+      "is there a tool",
+      "looking for an alternative",
+      "I hate",
+      "takes me hours",
+      "manually",
+      "willing to pay",
+      "how much would you pay",
+      "does anyone offer",
+      "there has to be a better way",
+      "currently using"
+    ],
+    "limit_per_query": 15,
+    "max_records": 75,
+    "sort": "relevance",
+    "time_filter": "year",
+    "request_delay_seconds": 1.0,
+    "skip_over_18": true,
+    "timeout_seconds": 30,
+    "client_id_env": "REDDIT_CLIENT_ID",
+    "client_secret_env": "REDDIT_CLIENT_SECRET",
+    "access_token_env": "REDDIT_ACCESS_TOKEN",
+    "user_agent_env": "REDDIT_USER_AGENT",
+    "user_agent": "windows:market-research-engine:v1.1"
+  },
+  "prefilter": {
+    "max_candidates": 100,
+    "source_limits": {
+      "hackernews": 40,
+      "reddit": 75
+    }
+  },
+  "llm": {
+    "provider": "ollama",
+    "request_delay_seconds": 0,
+    "ollama": {
+      "base_url": "http://127.0.0.1:11434",
+      "model": "qwen3:8b",
+      "temperature": 0,
+      "context_window": 8192,
+      "max_output_tokens": 4096,
+      "timeout_seconds": 300,
+      "max_retries": 2,
+      "keep_alive": "10m",
+      "think": false
+    }
+  },
+  "output": {
+    "directory": "output",
+    "raw_signals": "raw_signals.json",
+    "pain_signals": "pain_signals.json",
+    "opportunities": "opportunities.json",
+    "report": "market_opportunity_report.md"
+  }
+}
