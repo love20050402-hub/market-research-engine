@@ -61,6 +61,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- data/github_history.jsonl output/daily_report.md output/uk_leads.csv output/uk_leads_top.md output/money_radar.csv output/money_radar_top5.md output/pain_radar.csv output/pain_radar_top5.md output/ledgerdrop_validation.csv output/pending_intake.csv
+          git add -- output/preview/daily_report.md
           if git diff --cached --quiet; then
             echo 'No report/state changes.'
             exit 0

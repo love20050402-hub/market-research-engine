@@ -92,6 +92,8 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False):
     report = '# Opportunity Radar\n\n' + f'執行時間 UTC：{now}。評分為保守規則估計，所有分數 0–5；total 為五項平均。\n\n'
     if preview:
         report += '> FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。\n\n'
+    else:
+        report += '[查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)\n\n'
     report += ''.join(sections.values()) + '## 🚨 Strongest Signal Today\n\n' + strongest
     report += '## 🎯 Recommended Action\n\n' + '\n'.join(f'{i}. {a}' for i, a in enumerate(actions[:3], 1))
     report += '\n\n## Source health\n\n' + '\n'.join('- '+md(s) for s in stats) + f'\n- Pending intake: {len(pending)}\n'

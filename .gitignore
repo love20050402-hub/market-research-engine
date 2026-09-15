@@ -9,6 +9,9 @@ output/*
 !output/pain_radar_top5.md
 !output/ledgerdrop_validation.csv
 !output/pending_intake.csv
+!output/preview/
+output/preview/*
+!output/preview/daily_report.md
 __pycache__/
 *.pyc
 .venv/

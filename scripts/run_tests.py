@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def snapshot():
-    files = list((ROOT/'data').glob('*')) + list((ROOT/'output').glob('*'))
+    files = list((ROOT/'data').glob('*')) + list((ROOT/'output').rglob('*'))
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files if p.is_file()}
 
 

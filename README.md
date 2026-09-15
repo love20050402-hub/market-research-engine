@@ -8,6 +8,8 @@
 2. 打開 [output/daily_report.md](https://github.com/love20050402-hub/market-research-engine/blob/main/output/daily_report.md)。
 3. 看 **Strongest Signal Today + Recommended Action**；先確認報告頂端的執行日期。
 
+今日無新增時，可點報告頂端「查看目前最佳候選」，在手機直接看包含 SEEN 的只讀預覽，不需 terminal。
+
 每天 **台灣時間 07:17（UTC 23:17）** 自動執行，Windows 可以關機。GitHub 排程可能延遲；[Actions](https://github.com/love20050402-hub/market-research-engine/actions/workflows/daily-radar.yml) 可看成功／失敗或手動 Run workflow。只在預設分支執行；公開 repository 長期無活動時 GitHub 可能停用排程。
 
 ## 手機丟 X／Reddit 貼文

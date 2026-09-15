@@ -5,7 +5,7 @@ Date: 2026-09-15
 GitHub 的每日排程、HN / RSS / UK 公開來源收集、Issue intake、同一套 classify/score/dedupe/report，以及 report + JSONL state commit。Windows local workflow 保留，不參與雲端執行。
 
 ## 2. GitHub Actions 能否獨立執行
-已在 GitHub 標準 Ubuntu runner 獨立成功執行，包含真實取數、41 tests、report 和 state 自動 commit。無本機路徑或服務依賴，詳見本文末 Live verification。
+已在 GitHub 標準 Ubuntu runner 獨立成功執行，包含真實取數、tests、report 和 state 自動 commit。無本機路徑或服務依賴，詳見本文末 Live verification。
 Workflow 僅在公開 repo 的預設分支執行，有 contents:write / issues:read、10 分鐘 timeout、concurrency 和明確輸出 allowlist。測試失敗不 commit；來源失敗只記錄並繼續。不 force-push。
 
 ## 3. 每天何時
@@ -44,8 +44,8 @@ WWR feed 提供雇主名稱、明示公司網站及國別；仍要求小公司�
 沒有新增費用、信用卡、服務、VPS、付費 API 或依賴。現有 repo 為 public，使用標準 ubuntu-latest runner。不使用 artifact/cache 儲存；state 和報告直接進 Git。repo 若改 private，workflow 會跳過，不能默默轉成付費執行。沒有修改帳戶 billing 設定。
 
 ## Quality gate
-- Windows Python 3.14.7：41 tests PASS。
-- 真實 WSL Ubuntu Python 3.14.4：41 tests PASS。
+- Windows Python 3.14.7：42 tests PASS。
+- 真實 WSL Ubuntu Python 3.14.4：42 tests PASS。
 - 兩平台 production data/output SHA-256 前後不變。
 - actionlint 1.7.12 官方 release（下載 checksum 校驗）：workflow syntax / expressions 檢查 PASS。
 - 真實 fresh preview 成功，HN、RSS、CF、GitHub Issues 都有 Source health。
@@ -59,6 +59,8 @@ WWR feed 提供雇主名稱、明示公司網站及國別；仍要求小公司�
 - [Bot commit](https://github.com/love20050402-hub/market-research-engine/commit/9c4a2126edc8b61dc667ead3d1973272b7feff45)：radar: daily update 2026-09-15。119 筆 NEW JSONL records；9 個 CSV/Markdown 報告與 state 同一 commit。
 - 讀回 GitHub raw report/state，確認 HN 四查詢、RSS、Contracts Finder、Issue API 都成功；當時沒有開放 Intake Issue，UK 合格 lead 為 0，未用 fixture 填數。
 - Review 真實 runner logs 發現舊 action 的 Node 20 deprecation。已改成官方 Node 24 checkout v5 / setup-python v6，固定各自核對過的 commit SHA。
+- [第二次雲端執行成功](https://github.com/love20050402-hub/market-research-engine/actions/runs/34936209138)，新 Node 24 actions、tests、commit 全部通過；由最新 commit c6ce83d 的固定 SHA 讀回 state，確認 119 SEEN，沒有把舊資料重新標成 NEW。
+- 手機每日報告另提供 output/preview/daily_report.md 連結，使用同次取數的記憶體結果產生，包含 SEEN，不額外抓來源或更動 history。
 
 ## 已知限制
 規則主要支援英文，仍可能誤判語境；人工檢查來源與時效。Feed 有數量上限、沒有遍歷所有 UK 公司。私密資料不要貼入公開 Issues；report 與 cloud history 也會公開。雲端 state 和報告是同一 commit，不保證 GitHub 永不延遲或中斷。日誌留在 GitHub job logs／本機 logs，不購買外部儲存。

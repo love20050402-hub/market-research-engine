@@ -67,6 +67,18 @@ class CloudRadarTests(unittest.TestCase):
             run(root, True, [FIXTURE], fresh_preview=True, state_file=root/'data/h.jsonl')
             self.assertFalse((root/'data/h.jsonl').exists())
 
+    def test_normal_run_exposes_seen_mobile_preview(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            run(root, True, [FIXTURE])
+            run(root, True, [FIXTURE])
+            report = (root/'output/daily_report.md').read_text(encoding='utf-8')
+            preview = (root/'output/preview/daily_report.md').read_text(encoding='utf-8')
+            self.assertIn('(preview/daily_report.md)', report)
+            self.assertIn('今日無新增', report)
+            self.assertIn('Need invoice automation help', preview)
+            self.assertIn('SEEN', preview)
+
     def test_guard_production_and_fixture_import(self):
         with patch.dict(os.environ, {'RADAR_TEST_MODE':'1'}):
             with self.assertRaises(ValueError):

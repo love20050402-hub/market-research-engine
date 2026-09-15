@@ -82,6 +82,9 @@ def run(root=BASE, offline=False, imports=(), *, fresh_preview=False, state_file
         rows = list(history.current.values())
         stats.append(f'Processed unique: {len(rows)}; malformed skipped: {rejected}')
         reports(output, rows, stats, pending, now, preview=fresh_preview, mobile=bool(github_issues))
+        if not fresh_preview:
+            # Reuse this run's in-memory results: no second collection/history mutation.
+            reports(output/'preview', rows, stats, pending, now, preview=True, mobile=bool(github_issues))
         history.close()
         history = None
         logger.info('Completed: %s unique records, %s pending URLs', len(rows), len(pending))
