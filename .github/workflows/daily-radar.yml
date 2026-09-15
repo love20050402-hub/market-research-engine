@@ -1,0 +1,70 @@
+name: Daily Opportunity Radar
+
+on:
+  schedule:
+    - cron: '17 23 * * *' # 07:17 Asia/Taipei, next calendar day
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/daily-radar.yml'
+      - 'run_daily_radar.py'
+      - 'radar/**'
+      - 'scripts/run_tests.py'
+      - 'tests/**'
+
+permissions:
+  contents: write
+  issues: read
+
+concurrency:
+  group: opportunity-radar-production
+  cancel-in-progress: false
+
+jobs:
+  daily:
+    # Standard public runner is free; never switch a private repo to billable execution.
+    if: github.event.repository.private == false && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONUTF8: '1'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run daily radar
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RADAR_REPOSITORY: ${{ github.repository }}
+        run: python run_daily_radar.py --state-file data/github_history.jsonl --github-issues "$RADAR_REPOSITORY"
+      - name: Test without touching production history
+        run: python scripts/run_tests.py
+      - name: Save report in mobile-readable job summary
+        if: always()
+        run: |
+          if test -f output/daily_report.md; then
+            cat output/daily_report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          if test -f logs/radar.log; then
+            tail -n 30 logs/radar.log
+          fi
+      - name: Commit report and persistent state if changed
+        env:
+          RADAR_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/github_history.jsonl output/daily_report.md output/uk_leads.csv output/uk_leads_top.md output/money_radar.csv output/money_radar_top5.md output/pain_radar.csv output/pain_radar_top5.md output/ledgerdrop_validation.csv output/pending_intake.csv
+          if git diff --cached --quiet; then
+            echo 'No report/state changes.'
+            exit 0
+          fi
+          git commit -m "radar: daily update $(date -u +%F)"
+          git pull --rebase origin "$RADAR_BRANCH"
+          git push origin "HEAD:$RADAR_BRANCH"

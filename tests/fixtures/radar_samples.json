@@ -1,0 +1,10 @@
+[
+  {"source":"fixture","url":"https://example.com/request/1","author":"test-owner","company":"Example Small Studio (FICTIONAL)","website":"https://example.org","country":"UK","title":"Need invoice automation help","text":"We are a small agency in the UK. We manually process 200 invoices every week in Excel. We need someone to automate PDF extraction. Our budget is £500. Currently using QuickBooks but the export is frustrating.","contact_page_or_public_contact":"https://example.org/contact"},
+  {"source":"fixture","url":"https://example.com/pain/2","author":"test-bookkeeper","title":"Manual receipt processing is frustrating","text":"I manually copy paste receipt data into a spreadsheet every day. It takes 3 hours. I am looking for an alternative to Xero; the existing software is too complicated."},
+  {"source":"fixture","url":"https://example.com/ad/3","title":"Our services","text":"We offer invoice automation services. Buy now and use my referral. Our small agency can automate your workflow."},
+  {"source":"fixture","url":"https://example.com/chat/4","text":"I love PDF and invoice software. Great work everyone, this looks amazing!"},
+  {"source":"fixture","url":"https://example.com/free/5","text":"I need someone to fix my website workflow for free. I have no budget."},
+  {"source":"fixture","url":"https://example.com/recruiter/6","text":"We are a recruitment agency hiring a developer for a full-time position. Apply now to work on invoice automation."},
+  {"source":"fixture","text":null},
+  "malformed record"
+]

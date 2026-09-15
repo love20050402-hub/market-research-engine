@@ -1,5 +1,14 @@
 .env
-output/
+output/*
+!output/daily_report.md
+!output/uk_leads.csv
+!output/uk_leads_top.md
+!output/money_radar.csv
+!output/money_radar_top5.md
+!output/pain_radar.csv
+!output/pain_radar_top5.md
+!output/ledgerdrop_validation.csv
+!output/pending_intake.csv
 __pycache__/
 *.pyc
 .venv/
@@ -8,3 +17,9 @@ venv/
 .mypy_cache/
 .DS_Store
 Thumbs.db
+data/opportunity_history.sqlite3*
+data/*.lock
+data/*.tmp
+logs/
+input/manual_text.txt
+input/manual_urls.txt
