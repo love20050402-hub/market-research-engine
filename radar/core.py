@@ -35,6 +35,62 @@ OWNER = r'\b(?:i|we|our|my)\b'
 BUYER = r'(?:i|we)(?:.m| are| am)? (?:looking for|need (?:someone|help|a developer|a designer|a freelancer|a marketer)|want to hire|would pay|am willing to pay)|(?:my|our) (?:company|team|business) needs help|need someone to|looking for (?:a |an )?(?:freelancer|developer|designer|marketer)|hiring someone'
 PAYMENT = r'(?:i|we)(?:.m| are| am)? (?:willing to pay|can pay|will pay|would pay)|(?:my|our|have a|have) budget|budget (?:is|of|:)|paid (?:project|contract)|pay someone'
 BUSINESS_OBJECT = r'invoice|receipt|expense|bookkeeping|pdf|ocr|spreadsheet|excel|data entry|manual entry|website|customer|client|business|report|content|marketing|software|tool|workflow'
+PROBLEM = r'too expensive|too complicated|missing feature|frustrat\w*|tedious|struggl\w*|wast\w* (?:time|hours)|takes .{0,25}hours|\b(?:cannot|can.t) (?:process|use|export|import|extract|access|open|save|copy|track)\w*|\b(?:fails? to|keeps failing)\b'
+MANUAL_WORK = r'\b(?:manually (?:process|enter|extract|copy|track|reconcile|convert)\w*|copy[ -]paste|enter\w* .{0,40}by hand)\b'
+REPEAT = r'\b(?:every (?:day|week|month)|daily|weekly|monthly|\d+ (?:invoices|receipts|hours))\b'
+COMMERCIAL = r'\bbudget\b|willing to pay|looking for (?:a |an )?(?:freelancer|developer|designer|marketer)|need someone|\bhiring\b|paid help|paid contract|request for (?:a )?service|\bcontract\b'
+NON_MARKET = r'court|legal dispute|lawsuit|\bvs\.?\s|politic|election|philosoph|academic|news report|scientists|study finds'
+
+
+def quality_evidence(row):
+    # ponytail: conservative English clauses; add semantic extraction only with labelled evidence.
+    evidence = dict.fromkeys(('pain', 'workaround', 'request', 'payment', 'repeat', 'replacement'), '')
+    for sentence in re.split(r'(?<=[.!?])\s+|\n', row.get('text', '')):
+        if match(r'when you say|that actually means|\bimagine\b|\bsuppose\b|\bif (?:i|we|you)\b|years ago|used to', sentence):
+            continue
+        sentence = re.sub(r'"[^"]*"|“[^”]*”', '', sentence).strip()
+        personal = match(OWNER, sentence) or match(r'\b(?:our client|our team|the customer)\b', sentence)
+        concrete = match(BUSINESS_OBJECT, sentence) and match(ACTION+'|'+PROBLEM, sentence)
+        if personal and concrete:
+            if match(PROBLEM, sentence):
+                problem = excerpt(sentence, PROBLEM)
+                # Retain only the problem clause, not a preceding current-process clause.
+                evidence['pain'] = evidence['pain'] or next((c.strip() for c in re.split(r';|\bbut\b|\band\b', problem) if match(PROBLEM, c)), problem)
+            if match(REPEAT, sentence):
+                evidence['repeat'] = evidence['repeat'] or sentence
+            workaround = re.search(r'(?:'+MANUAL_WORK+r'|(?:currently |now )using\b|use\b.{0,50}\bto\b|using\b.{0,50}\bto\b)[^.;]*', sentence, re.I)
+            if workaround and not match(r'\b(?:would|could|should|will|want to|need to|not|never|no longer)\b', sentence):
+                evidence['workaround'] = evidence['workaround'] or re.split(r'\bbut\b|\bbecause\b|\band (?:it|this)\b', workaround.group(), maxsplit=1)[0].strip()
+            if match(MANUAL_WORK, sentence) and match(REPEAT, sentence):
+                task = re.search(BUSINESS_OBJECT, sentence, re.I).group()
+                evidence['pain'] = evidence['pain'] or f'Repeated manual handling of {task} (recurring effort stated).'
+        request = match(BUYER, sentence) and (personal or match(r'need someone|looking for (?:a |an )?(?:freelancer|developer)', sentence))
+        if request and any(match(p, sentence) for p in NEEDS.values()):
+            evidence['request'] = evidence['request'] or sentence
+        if (personal or request) and match(COMMERCIAL, sentence) and not match(r'no budget|unpaid|for free|not willing|won.t pay|would.ve hired|used to', sentence):
+            evidence['payment'] = evidence['payment'] or sentence
+        if personal and match(r'looking for (?:an? )?alternative|replace (?:our|my)|switch (?:from|away)|need (?:an? )?alternative', sentence):
+            evidence['replacement'] = evidence['replacement'] or sentence
+    return evidence
+
+
+def quality_gate(row, category=None):
+    evidence = quality_evidence(row)
+    real_need = bool(evidence['pain'] or evidence['request'] or evidence['replacement'])
+    if not real_need:
+        return False
+    if category == 'money':
+        return bool(evidence['payment'])
+    if category == 'pain':
+        return bool(evidence['pain'])
+    return float(row.get('total_score', 0)) >= 3.5 and sum(bool(v) for v in evidence.values()) >= 2
+
+
+def signal_priority(row):
+    evidence = quality_evidence(row)
+    return (float(row.get('score_payment_intent', 0)), bool(evidence['pain']),
+            bool(evidence['workaround']), float(row.get('score_user_fit', 0)),
+            bool(evidence['repeat']), float(row.get('score_saas_potential', 0)), float(row.get('total_score', 0)))
 
 
 def match(pattern, text):
@@ -88,11 +144,12 @@ def normalize(raw):
 
 def classify(raw):
     r = normalize(raw)
+    evidence = quality_evidence(r)
     # HN comment titles describe the parent story, not the comment author's need.
     text = r['text'] if r['source'] == 'hackernews' else r['title'] + '. ' + r['text']
     need = [name for name, pattern in NEEDS.items() if match(pattern, text)]
     seek, pain, owner = match(SEEK, text), match(PAIN, text), match(OWNER, text)
-    ad = match(r'hire me|available for hire|my services|we offer|our services|buy now|sign up now|sponsored|use my referral|i built|we built|i launched|show hn:', text)
+    ad = match(r'hire me|available for hire|willing to relocate|my services|we offer|our services|buy now|sign up now|sponsored|use my referral|i built|we built|i launched|show hn:', text)
     recruiter = match(r'recruitment agency|recruiter|recruiting agency|job board|apply now|full.time (?:role|position)', text)
     negative = match(r'not willing to pay|won.t pay|no budget|zero budget|unpaid|for free|no longer (?:need|looking)|position filled|already (?:solved|hired)', text)
     payment = excerpt(text, PAYMENT)
@@ -104,20 +161,22 @@ def classify(raw):
     fit = 4 if concrete else 2 if need else 0
     saas = min(5, int(concrete and pain)*2 + int(quantified and pain)*2 + int(match(r'alternative|missing feature|too expensive|too complicated', text)))
     sentences = re.split(r'(?<=[.!?])\s+|\n', text)
-    personal_pain = any(match(OWNER, s) and match(PAIN, s) and match(BUSINESS_OBJECT, s) for s in sentences)
+    personal_pain = bool(evidence['pain'])
     buyer = any(match(BUYER, s) and not match(r'\bif (?:i|we)|suppose|hypothetical|used to|years ago', s) and any(match(p, s) for p in NEEDS.values()) for s in sentences)
     qualified = auth >= 3 and not ad and not recruiter and not match(r'no longer (?:need|looking)|position filled|already (?:solved|hired)', text)
+    if match(NON_MARKET, r['title']) and not (personal_pain or evidence['request'] or evidence['replacement']):
+        qualified = False
     categories = []
-    if qualified and buyer and pay >= 2:
+    if qualified and buyer and pay >= 2 and evidence['payment']:
         categories.append('money')
     if qualified and personal_pain and concrete:
         categories.append('pain')
     r.update(zip(SCORES, (auth, pay, strength, fit, saas)))
     r.update(category=';'.join(categories), need_type='; '.join(need) or 'UNKNOWN',
              total_score=round((auth+pay+strength+fit+saas)/5, 2),
-             pain_summary=excerpt(r['text'], PAIN), pain_signal=excerpt(r['text'], PAIN),
+             pain_summary=evidence['pain'] or 'UNKNOWN', pain_signal=evidence['pain'] or 'UNKNOWN',
              payment_signal=payment if not negative else 'Explicit negative/free/closed signal; payment not established',
-             current_workaround=excerpt(r['text'], r'currently|using|manual|by hand|copy.paste|spreadsheet|excel'),
+             current_workaround=evidence['workaround'] or 'UNKNOWN',
              workflow=excerpt(r['text'], ACTION) if concrete else 'UNKNOWN',
              competitor=excerpt(text, r'quickbooks|xero|dext|expensify|freshbooks|wave|sage'),
              feature_request=excerpt(text, r'wish|missing|need .{0,40}feature|looking for an alternative'),
@@ -125,7 +184,7 @@ def classify(raw):
              saas_signal='Recurring workflow hypothesis; demand unvalidated' if saas >= 3 else 'Insufficient recurring evidence',
              fit_signal='Small scoped service hypothesis' if fit >= 4 else 'Needs scope review',
              possible_offer='Propose a small paid pilot for: ' + '; '.join(need) if need else 'UNKNOWN',
-             reason=f'Rules v2; owner={owner}; buyer request={buyer}; personal pain={personal_pain}; concrete workflow={concrete}; recurring/quantity={quantified}; ad={ad}; recruiter={recruiter}; negative={negative}. Scores are estimates, not verified purchase intent.')
+             reason=f'Rules v3; owner={owner}; buyer request={buyer}; personal pain={personal_pain}; concrete workflow={concrete}; recurring/quantity={quantified}; ad={ad}; recruiter={recruiter}; negative={negative}. Scores are estimates, not verified purchase intent.')
     # Region and small-company evidence must both be explicit; a .uk suffix is not proof.
     uk = r['country'].casefold() in ('uk', 'gb', 'united kingdom', 'great britain') or match(r'\b(?:uk|united kingdom|britain|england|scotland|wales|northern ireland)\b', text)
     small = match(r'small (?:business|agency|company|team)|sole trader|independent consultant|local business|\b[1-9][0-9]?[- ]person\b', text)

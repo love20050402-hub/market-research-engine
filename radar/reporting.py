@@ -3,7 +3,7 @@ import csv
 import re
 from datetime import datetime, timezone, timedelta
 
-from radar.core import FIELDS, domain
+from radar.core import FIELDS, domain, quality_gate, signal_priority
 
 
 def write_csv(path, rows, fields):
@@ -32,12 +32,14 @@ def fresh(r):
 
 
 def ranked(rows, category, only_fresh=False, preview=False):
-    return sorted((r for r in rows if category in r['category'].split(';') and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -float(r['total_score']), r['url'], r['title']))
+    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), *(-v for v in signal_priority(r)), r['url'], r['title']))
 
 
 def card(r, category):
     source = f"[原文]({r['url'].replace(')', '%29').replace('(', '%28')})" if r['url'] else '未附 URL，先補原文'
     base = f"### {md(r['title'])}\n\n{source} · {r['status']} · {r['total_score']}/5 · 發布：{md(r['published_at'])}\n\n"
+    if not quality_gate(r):
+        base += '**LOW CONFIDENCE / NOT ACTIONABLE**\n\n'
     if category == 'money':
         detail = [('對方要什麼', r['workflow']), ('為什麼可能願意付錢', r['payment_signal']), ('我們可以賣什麼（假設）', r['possible_offer']), ('是否值得聯絡', '先人工核對時效、身份、預算，再決定' if r['score_payment_intent'] >= 4 else '先確認是否有預算，不直接當成付費客戶')]
     elif category == 'uk':
@@ -76,8 +78,8 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False):
         if cat != 'ledgerdrop':
             name = filename + ('_top.md' if cat == 'uk' else '_top5.md')
             (output/name).write_text(section, encoding='utf-8')
-    candidates = sorted([r for r in rows if r['category'].strip(';') and (preview or fresh(r))], key=lambda r: -r['total_score'])
-    strongest = card(candidates[0], 'uk' if 'uk' in candidates[0]['category'].split(';') else 'money' if 'money' in candidates[0]['category'] else 'pain') if candidates else '今日無新增或重要更新的合格訊號。\n\n'
+    candidates = sorted([r for r in rows if r['category'].strip(';') and quality_gate(r) and (preview or fresh(r))], key=signal_priority, reverse=True)
+    strongest = card(candidates[0], 'uk' if 'uk' in candidates[0]['category'].split(';') else 'money' if 'money' in candidates[0]['category'] else 'pain') if candidates else 'No actionable signal today.\n\n今日無新增或重要更新的可行動訊號。\n\n'
     actions = []
     for r in candidates[:2]:
         actions.append(f"人工查看「{md(r['title'])}」原文與日期，確認需求仍存在；{'確認預算並準備小額試做提案' if r['score_payment_intent'] >= 4 else '整理 3 個訪談問題：頻率、現行解法、成本'}。")

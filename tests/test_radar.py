@@ -5,9 +5,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from radar.core import classify, canonical_url, History, SCORES
+from radar.core import classify, canonical_url, History, SCORES, quality_gate, signal_priority
 from radar.intake import manual_records, get_public
-from radar.reporting import fresh, write_csv
+from radar.reporting import fresh, write_csv, reports, ranked
 from run_daily_radar import run
 
 FIXTURE = Path(__file__).parent/'fixtures/radar_samples.json'
@@ -133,6 +133,43 @@ class RadarTests(unittest.TestCase):
             h.close()
             write_csv(root/'safe.csv', [{'text':'=HYPERLINK("https://example.com")'}], ['text'])
             self.assertIn("'=HYPERLINK", (root/'safe.csv').read_text(encoding='utf-8-sig'))
+
+    def test_ranking_hard_gates_and_court_regression(self):
+        court = {'source':'hackernews', 'title':'Amazon vs. Perplexity – U.S. Court of Appeals for the Ninth Circuit',
+                 'text':'When you say I am "manually controlling the site", that actually means I run a program on my computer that makes requests to the site and chooses how to display the content. An "agentic workflow" does the same thing.'}
+        rejected = classify(court)
+        self.assertEqual(rejected['category'], '')
+        self.assertEqual(rejected['pain_summary'], 'UNKNOWN')
+        self.assertEqual(rejected['current_workaround'], 'UNKNOWN')
+        # Old stored scores/categories cannot bypass the shared report gate.
+        stale = dict(rejected, total_score=5, category='pain', status='NEW')
+        self.assertFalse(quality_gate(stale))
+        self.assertEqual(ranked([stale], 'pain', preview=True), [])
+        alternative = classify({'text':'I am looking for an alternative to my software to process invoices.'})
+        self.assertNotIn('money', alternative['category'])
+        real = classify({'source':'hackernews', 'title':court['title'],
+                         'text':'We manually process 200 invoices every week in Excel; it takes 5 hours. We need someone to automate invoice extraction. Our budget is £500.'})
+        self.assertIn('pain', real['category'])  # A real request under a news title remains eligible.
+        self.assertIn('money', real['category'])
+        self.assertNotEqual(real['pain_summary'], real['current_workaround'])
+        self.assertIn('takes 5 hours', real['pain_summary'])
+        self.assertIn('manually process', real['current_workaround'])
+        self.assertTrue(quality_gate(real))
+        self.assertFalse(quality_gate(dict(real, total_score=3.49)))
+        no_workaround = classify({'text':'I need help to export invoices because the software is too complicated.'})
+        self.assertEqual(no_workaround['current_workaround'], 'UNKNOWN')
+        # Payment outranks raw score; a request alone does not satisfy two-signal gate.
+        self.assertGreater(signal_priority(dict(real, score_payment_intent=5,total_score=3.5)), signal_priority(dict(real, score_payment_intent=0,total_score=5)))
+        lone_request = dict(classify({'text':'I need help to fix my website layout.'}), total_score=5)
+        self.assertFalse(quality_gate(lone_request))
+        low = dict(real, total_score=3.4, status='SEEN')
+        with tempfile.TemporaryDirectory() as tmp:
+            reports(Path(tmp), [stale, low], [], [], 'test', preview=True)
+            output = (Path(tmp)/'daily_report.md').read_text(encoding='utf-8')
+            self.assertIn('LOW CONFIDENCE / NOT ACTIONABLE', output)
+            strongest = output.split('## 🚨 Strongest Signal Today')[1].split('## 🎯')[0]
+            self.assertIn('No actionable signal today.', strongest)
+            self.assertNotIn('Amazon', strongest)
 
 
 if __name__ == '__main__':
