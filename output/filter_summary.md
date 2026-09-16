@@ -7,7 +7,7 @@ Reasons overlap; full evidence remains in CSV.
 - No explicit commercial request: 119
 - No concrete user pain: 119
 - Solo fit not established / scope too large: 119
-- SEEN / not important / expired age: 49
+- SEEN / not important / expired age: 119
 - Feedback suppression / too large: 2
 - Non-market discussion without concrete user need: 1
 
