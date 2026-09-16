@@ -12,9 +12,32 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 from urllib.robotparser import RobotFileParser
 
 from collectors.hackernews import HackerNewsCollector, clean_text
-from radar.core import canonical_url, domain
+from radar.core import canonical_url, domain, NEEDS
 
 AGENT = 'OpportunityRadar/1.0'
+HN_QUERIES = ('looking for freelancer', 'need someone', 'willing to pay', 'paid project',
+              'need help with', 'is there a tool', 'manually doing', 'looking for alternative')
+
+
+def hn_demand_text(hit):
+    """Source-only filter: require a need in the post body, never its parent title."""
+    text = hit.get('text', '')
+    if re.search(r'\b(?:i|we) (?:built|launched)|\bseeking work\b|available for hire|willing to relocate', text, re.I):
+        return False
+    phrase = r'looking for (?:an? )?(?:freelancer|alternative)|need someone|willing to pay|paid project|need help with|is there a tool|manually doing'
+    for sentence in re.split(r'(?<=[.!?])\s+|\n', text):
+        sentence = re.sub(r'"[^"]*"|“[^”]*”', '', sentence).strip()
+        demand = re.search(phrase, sentence, re.I)
+        if not demand or re.search(r'\b(?:if|suppose|imagine|dont|don.t|doesn.t|aren.t|not|never|no.one|nobody|preferred)\b|used to', sentence[:demand.start()], re.I):
+            continue
+        scope = '|'.join(NEEDS.values()) + r'|\b(?:code|coding|agent|script|api|data|export|import|freelancer)\b|paid project'
+        if not re.search(scope, sentence, re.I):
+            continue
+        prefix = sentence[:demand.start()]
+        owner = re.search(r'\b(?:i|we|my|our)\b.{0,50}$', prefix, re.I) and not re.search(r'\b(?:you|they|their|people|folks)\b', prefix, re.I)
+        if owner or re.match(r'\s*(?:looking for|need someone|need help with|is there a tool|paid project|willing to pay)', sentence, re.I):
+            return True
+    return False
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -142,20 +165,23 @@ def manual_records(root, offline, logger):
 def collect_hn(logger):
     records, stats = [], []
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    for query in ('willing to pay', 'need help', 'manual', 'looking for alternative'):
+    for query in HN_QUERIES:
         try:
+            # Search all phrase words, then verify locally: preserves "a freelancer" /
+            # "an alternative" variants without trusting matches in parent titles.
             collector = HackerNewsCollector({'endpoint': 'https://hn.algolia.com/api/v1/search_by_date', 'query': query, 'tags': '(story,comment)', 'hits_per_page': 30, 'timeout_seconds': 12, 'user_agent': AGENT})
             hits = collector.fetch_and_normalize()
             recent = []
             for hit in hits:
                 try:
                     date = datetime.fromisoformat(hit['created_at'].replace('Z', '+00:00'))
-                    if date >= cutoff:
+                    if cutoff <= date <= datetime.now(timezone.utc):
                         recent.append(hit)
                 except (ValueError, TypeError):
                     continue
-            records.extend(recent)
-            stats.append(f'HN / {query}: OK, {len(recent)} records within 30 days')
+            kept = [hit for hit in recent if hn_demand_text(hit)]
+            records.extend(kept)
+            stats.append(f'HN / {query}: OK, {len(kept)} demand posts / {len(recent)} recent hits; source noise removed: {len(recent)-len(kept)}')
         except Exception as exc:
             logger.warning('HN query %s failed: %s', query, type(exc).__name__)
             stats.append(f'HN / {query}: FAILED ({type(exc).__name__})')

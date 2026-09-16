@@ -3,6 +3,13 @@ Date: 2026-09-15
 
 ## 2026-09-16 Remote-use quality patch
 
+### Source Quality / False Negative Audit
+
+- 基準：commit 7504697 的 119 筆 CSV（116 HN）；唯讀檢視 total score 最高 20 筆。108/119 primary 為 NO_CONCRETE_BUYER_OR_USER_NEED。
+- 2 筆可人工追問的 extraction false negatives：HN 49722006（structured output／固定 workflow）、49722980（agent 改方向後殘留 code）；0 筆已具立即聯絡資格。hard gate 未改。
+- Primary 原因互斥且總數等於 processed；near misses 只供診斷、不補滿 5 筆。HN 改用需求片語＋原文需求過濾；本次查詢 freelancer thread 僅回傳過期月份，未加入。
+- Targeted tests → 完整 53 tests PASS（full suite 一次）；production data/output 雜湊不變。Fresh preview 過濾 237 個 HN 搜尋命中（含跨查詢重複），無合格 HN 留下；保留其他来源 3 筆，Action Queue 無垃圾。這證明雜訊未進入，不代表已找到新機會。actionlint / git diff 檢查 PASS。
+
 - 手機 Feedback Issue、Cash／Market 分數、Solo-fit gate、30 天痛點群組與最多 3 件 Action Queue 已整合現有 JSONL／SQLite；CONTACTED 及後續成交狀態不重複推薦。
 - 新增 action_queue.md、pain_clusters.md、filter_summary.md；daily_report 頂端顯示健康狀態，依行動／Cash／重複痛點／LedgerDrop／健康排列。文件驗證需要實際 workflow 證據。
 - 281 筆既有 history 唯讀回測：0 actionable／0 Cash／0 合格群組；法院案例非 actionable，DN Colleges 為 TOO_LARGE。兩份 production history SHA-256 不變。

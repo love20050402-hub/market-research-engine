@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from radar.core import FIELDS, domain, quality_gate, signal_priority, NON_MARKET
+from radar.core import FIELDS, domain, quality_gate, signal_priority, quality_evidence
 from radar.intelligence import enrich_history, eligible, cash_candidate, pain_clusters, date as parse_date
 
 
@@ -97,6 +97,61 @@ def queue_markdown(actions):
     return body
 
 
+def diagnostic_need(row):
+    """Human-review recall only. Never used by classification or Action Queue."""
+    text = row.get('text', '')
+    if re.search(r'\b(?:i|we) (?:built|launched)|seeking work|available for hire|willing to relocate', text, re.I):
+        return ''
+    for sentence in re.split(r'(?<=[.!?])\s+|\n', text):
+        if (re.search(r'\b(?:i|we) need (?:to|an? (?:tool|script|developer|service|freelancer))|i.ve noticed.{0,100}(?:failure|problem)|how are others handling this', sentence, re.I)
+                and re.search(r'workflow|code|coding|agent|output|export|import|invoice|spreadsheet|script|software', sentence, re.I)):
+            return sentence
+    return ''
+
+
+def rejection_reasons(row, action_urls=()):
+    """Ordered bottlenecks: content/scope before score, recurrence and dedupe."""
+    ev = quality_evidence(row)
+    reasons = []
+    if row.get('feedback') in {'BAD', 'IGNORED', 'CONTACTED', 'REPLIED', 'TESTER', 'PAID'}:
+        reasons.append('FEEDBACK_SUPPRESSED')
+    if row.get('solo_fit') == 'TOO_LARGE':
+        reasons.append('SCOPE_TOO_LARGE')
+    if re.search(r'\b(?:i|we) (?:built|launched)|seeking work|available for hire|willing to relocate', row['text'], re.I):
+        reasons.append('SELLER_OR_SELF_PROMOTION')
+    if row.get('source') == 'weworkremotely' and not cash_candidate(row):
+        reasons.append('ROLE_NOT_SCOPED_SERVICE')
+    need = bool(ev['pain'] or ev['request'] or ev['replacement'])
+    if not need:
+        reasons.append('UNRECOGNIZED_NEED_REVIEW' if diagnostic_need(row) else 'NO_CONCRETE_BUYER_OR_USER_NEED')
+    if not quality_gate(row):
+        reasons.append('BELOW_ACTIONABILITY_GATE')
+    if not ev['payment']:
+        reasons.append('NO_COMMERCIAL_SIGNAL')
+    if row.get('solo_fit') != 'SOLO_FIT':
+        reasons.append('SOLO_FIT_UNPROVEN')
+    if row.get('feedback_penalty'):
+        reasons.append('SIMILAR_NEGATIVE_FEEDBACK')
+    if not fresh(row):
+        reasons.append('SEEN_OR_EXPIRED')
+    url = row.get('evidence_url') or row.get('url')
+    if url in action_urls:
+        return 'NOT_REJECTED', []
+    reasons.append('NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER')
+    return reasons[0], reasons[1:]
+
+
+def near_misses(rows, action_urls=()):
+    candidates = []
+    for row in rows:
+        primary, secondary = rejection_reasons(row, action_urls)
+        ev = quality_evidence(row)
+        if (float(row.get('total_score', 0)) >= 1.5 and primary not in {'NOT_REJECTED', 'FEEDBACK_SUPPRESSED', 'SCOPE_TOO_LARGE', 'SELLER_OR_SELF_PROMOTION', 'ROLE_NOT_SCOPED_SERVICE'}
+                and (diagnostic_need(row) or ev['pain'] or ev['request'] or ev['replacement'])):
+            candidates.append((row, primary, secondary))
+    return sorted(candidates, key=lambda item: (float(item[0].get('total_score', 0)), item[0]['url']), reverse=True)[:5]
+
+
 def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, history_rows=None):
     rows = enrich_history(rows)
     historical = enrich_history(history_rows if history_rows is not None else rows)
@@ -118,20 +173,32 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
     if not clusters:
         cluster_text += 'No repeated concrete pain found in the last 30 days.\n\n'
     (output/'pain_clusters.md').write_text(cluster_text, encoding='utf-8')
-    reasons = Counter()
+    actual_actions = action_queue(rows, clusters)
+    action_urls = {r.get('evidence_url') or r['url'] for _, r, _, _ in actual_actions}
+    reasons, secondary_counts = Counter(), Counter()
+    details = []
     for row in rows:
-        if not quality_gate(row): reasons['Insufficient actionable evidence / score < 3.5'] += 1
-        if re.search(NON_MARKET, row['title'], re.I) and not quality_gate(row, 'pain') and not quality_gate(row, 'money'): reasons['Non-market discussion without concrete user need'] += 1
-        if not quality_gate(row, 'money'): reasons['No explicit commercial request'] += 1
-        if not quality_gate(row, 'pain'): reasons['No concrete user pain'] += 1
-        if row.get('solo_fit') != 'SOLO_FIT': reasons['Solo fit not established / scope too large'] += 1
-        if not eligible(row): reasons['Feedback suppression / too large'] += 1
-        if row.get('feedback_penalty'): reasons['Similar negative feedback penalty'] += 1
-        if not fresh(row): reasons['SEEN / not important / expired age'] += 1
-    summary = '# Filter Summary\n\n'+f'Processed unique: {len(rows)}\nReasons overlap; full evidence remains in CSV.\n\n'
-    summary += '\n'.join(f'- {reason}: {count}' for reason, count in reasons.items())+'\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n'
+        primary, secondary = rejection_reasons(row, action_urls)
+        row['primary_rejection_reason'] = primary
+        row['secondary_rejection_reasons'] = ';'.join(secondary)
+        reasons[primary] += 1
+        secondary_counts.update(secondary)
+        details.append(f"| {md(row['url'])} | {primary} | {', '.join(secondary)} |")
+    summary = '# Filter Summary\n\n'+f'Processed unique: {len(rows)}\nExactly one primary outcome per record; NOT_REJECTED means queued. Content/scope precede score, recurrence and SEEN.\n\n## Primary reasons (exclusive)\n\n'
+    summary += '\n'.join(f'- {reason}: {count}' for reason, count in reasons.most_common())+f'\n- TOTAL: {sum(reasons.values())}\n\n## Secondary reasons (overlapping)\n\n'
+    summary += '\n'.join(f'- {reason}: {count}' for reason, count in secondary_counts.most_common())+'\n\n## Source health\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n'
+    summary += '\n## Per-record diagnosis\n\n| URL | Primary | Secondary |\n| --- | --- | --- |\n'+'\n'.join(details)+'\n'
     (output/'filter_summary.md').write_text(summary, encoding='utf-8')
-    write_csv(output/'opportunities.csv', rows, FIELDS)
+    write_csv(output/'opportunities.csv', rows, FIELDS+['primary_rejection_reason', 'secondary_rejection_reasons'])
+    diagnostics = '# Near Misses\n\nLOW CONFIDENCE / NOT ACTIONABLE — diagnostic only, never an Action Queue input. Ranked by existing total score; no quota filling.\n\n'
+    moment = parse_date(now) or datetime.now(timezone.utc)
+    recent_history = [r for r in historical if (parse_date(r.get('published_at')) or parse_date(r.get('first_seen_at')) or datetime.min.replace(tzinfo=timezone.utc)) >= moment-timedelta(days=30)]
+    misses = near_misses(recent_history, action_urls)
+    for row, primary, secondary in misses:
+        diagnostics += f"### {md(row['title'])}\n\n[Evidence]({row['url'].replace(')', '%29')}) · {row['total_score']}/5\n\n- Last observed: {md(row.get('last_seen_at') or 'UNKNOWN')} (30-day history; may not be in today's feed)\n- Rejected reason: {primary}\n- Secondary: {', '.join(secondary)}\n- Evidence to review: {md(diagnostic_need(row) or row.get('pain_summary') or row['text'][:400])}\n\n"
+    if not misses:
+        diagnostics += 'No near-threshold candidates with concrete demand evidence.\n'
+    (output/'near_misses.md').write_text(diagnostics.rstrip()+'\n', encoding='utf-8')
     write_csv(output/'pending_intake.csv', pending, ['url', 'reason'])
     sections = {}
     for cat, filename, heading in [('money', 'money_radar', '💰 Money Radar Top 5'), ('uk', 'uk_leads', '🇬🇧 UK Lead Radar Top 5'), ('pain', 'pain_radar', '🔥 Pain Radar Top 5'), ('ledgerdrop', 'ledgerdrop_validation', '🧪 LedgerDrop Validation')]:
@@ -169,11 +236,11 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
     worthy = [c for c in clusters if c['worthy']]
     report += '## Repeated Market Pain\n\n' + ('\n'.join(f"- {md(c['key'])}: {c['independent_users']} independent users; {c['signal_count']} signals; {md(c['confidence'])}" for c in worthy[:5]) if worthy else 'No cluster meets the independent-evidence gate.') + '\n\n[30-day evidence](pain_clusters.md)\n\n'
     report += '## LedgerDrop\n\n' + sections['ledgerdrop']
-    report += '## System Health\n\n'+health+'\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n\n[Filter summary](filter_summary.md) · [Full CSV](opportunities.csv)\n\n'
+    report += '## System Health\n\n'+health+'\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n\n[Filter summary](filter_summary.md) · [Near misses — diagnostic only](near_misses.md) · [Full CSV](opportunities.csv)\n\n'
     report += '## 🚨 Strongest Signal Today\n\n' + strongest
     report += '## 🎯 Recommended Action\n\n' + ('See Today\'s Action Queue above.' if action_queue(rows, clusters, preview) else 'NO ACTION REQUIRED TODAY')
     report += '\n\n' + sections['uk'] + sections['pain']
     if preview:
-        for name in ('pain_clusters.md', 'filter_summary.md', 'opportunities.csv'):
+        for name in ('pain_clusters.md', 'filter_summary.md', 'opportunities.csv', 'near_misses.md'):
             report = report.replace(']('+name+')', '](../'+name+')')
     (output/'daily_report.md').write_text(report, encoding='utf-8')

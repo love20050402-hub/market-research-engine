@@ -52,6 +52,8 @@ Windows／Linux 在 repository 目錄皆可：`python run_daily_radar.py`。
 ## 結果去哪裡看
 `output/daily_report.md`。完整 CSV 同在 `output/`；NEW 與重要 UPDATED 優先，SEEN 留在 CSV。已知超過 30 天的貼文不進每日 Top。
 
+`filter_summary.md` 每筆只計一個 primary reason（內容／承接範圍優先，再看分數與 SEEN）；secondary 可重疊。`near_misses.md` 最多 5 筆最近 30 天的診斷線索，包含可能漏抽的需求，不代表達到 3.5 分；不會輸入 Action Queue。HN 改查 8 種需求片語並檢查原文，不再用單字 manual。Freelancer thread 本次未加入：查詢只得到過期月份，無法確認近期買方留言。
+
 ## 出錯怎麼辦
 手機看 Actions 的 job summary／失敗步驟與報告 Source health；本機看 `logs/radar.log`。來源失敗會跳過；离線加 `--offline`。history locked 時關閉另一個執行中的 Radar，不要刪 history。
 

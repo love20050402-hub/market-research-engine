@@ -4,6 +4,7 @@ output/*
 !output/action_queue.md
 !output/pain_clusters.md
 !output/filter_summary.md
+!output/near_misses.md
 !output/opportunities.csv
 !output/uk_leads.csv
 !output/uk_leads_top.md
