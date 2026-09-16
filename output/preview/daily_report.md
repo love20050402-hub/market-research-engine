@@ -1,6 +1,6 @@
 # Opportunity Radar
 
-執行時間 UTC：2026-09-15T11:38:54+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-09-16T01:25:30+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 > FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。
 
@@ -14,7 +14,7 @@
 
 ### CA18461 - DN Colleges Group - ITT for the Provision of Website Development Services
 
-[原文](https://contractsfinder.service.gov.uk/Notice/467796bd-1e9f-49f6-8c0c-9a25ef9dc344) · NEW · 2.8/5 · 發布：2026-09-15T12:06:18+01:00
+[原文](https://contractsfinder.service.gov.uk/Notice/467796bd-1e9f-49f6-8c0c-9a25ef9dc344) · SEEN · 2.8/5 · 發布：2026-09-15T12:06:18+01:00
 
 **LOW CONFIDENCE / NOT ACTIONABLE**
 
@@ -60,5 +60,5 @@ No actionable signal today.
 - WWR RSS: OK, 3 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 1 eligible source records (bounded, no pagination)
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 119; malformed skipped: 1
+- Processed unique: 120; malformed skipped: 0
 - Pending intake: 0
