@@ -39,6 +39,7 @@ jobs:
         with:
           python-version: '3.11'
       - name: Run daily radar
+        id: radar
         env:
           GITHUB_TOKEN: ${{ github.token }}
           RADAR_REPOSITORY: ${{ github.repository }}
@@ -62,10 +63,24 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- data/github_history.jsonl output/daily_report.md output/uk_leads.csv output/uk_leads_top.md output/money_radar.csv output/money_radar_top5.md output/pain_radar.csv output/pain_radar_top5.md output/ledgerdrop_validation.csv output/pending_intake.csv
           git add -- output/preview/daily_report.md
+          git add -- output/action_queue.md output/pain_clusters.md output/filter_summary.md output/opportunities.csv
           if git diff --cached --quiet; then
             echo 'No report/state changes.'
             exit 0
           fi
           git commit -m "radar: daily update $(date -u +%F)"
           git pull --rebase origin "$RADAR_BRANCH"
+          git push origin "HEAD:$RADAR_BRANCH"
+      - name: Publish core failure status without history changes
+        if: failure() && steps.radar.outcome == 'failure'
+        env:
+          RADAR_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          printf '# Opportunity Radar\n\n**FAILED**\n\nUTC: %s\n\nCore run failed. See GitHub Actions logs; recommendations unavailable.\n' "$(date -u +%FT%TZ)" > output/daily_report.md
+          printf "# Today's Action Queue\n\nFAILED — recommendations unavailable.\n" > output/action_queue.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- output/daily_report.md output/action_queue.md
+          git diff --cached --quiet && exit 0
+          git commit -m "radar: failure status $(date -u +%F)"
           git push origin "HEAD:$RADAR_BRANCH"

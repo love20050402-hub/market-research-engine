@@ -1,9 +1,11 @@
 """UTF-8 CSV and Markdown reports, with fresh evidence first."""
 import csv
 import re
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from radar.core import FIELDS, domain, quality_gate, signal_priority
+from radar.core import FIELDS, domain, quality_gate, signal_priority, NON_MARKET
+from radar.intelligence import enrich_history, eligible, cash_candidate, pain_clusters, date as parse_date
 
 
 def write_csv(path, rows, fields):
@@ -20,11 +22,14 @@ def md(value):
 
 
 def fresh(r):
+    deadline = parse_date(r.get('deadline'))
+    if deadline and deadline <= datetime.now(timezone.utc):
+        return False
     try:
         date = datetime.fromisoformat(r['published_at'].replace('Z', '+00:00'))
         if date.tzinfo is None:
             date = date.replace(tzinfo=timezone.utc)
-        if date < datetime.now(timezone.utc) - timedelta(days=30):
+        if not datetime.now(timezone.utc) - timedelta(days=30) <= date <= datetime.now(timezone.utc):
             return False
     except (ValueError, TypeError):
         pass  # Unknown dates remain explicitly marked for human verification.
@@ -32,12 +37,13 @@ def fresh(r):
 
 
 def ranked(rows, category, only_fresh=False, preview=False):
-    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), *(-v for v in signal_priority(r)), r['url'], r['title']))
+    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (category != 'money' or cash_candidate(r)) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -r.get('cash_score' if category == 'money' else 'market_score', 0), -r.get('validation_value', 0), *(-v for v in signal_priority(r)), r['url'], r['title']))
 
 
 def card(r, category):
     source = f"[原文]({r['url'].replace(')', '%29').replace('(', '%28')})" if r['url'] else '未附 URL，先補原文'
     base = f"### {md(r['title'])}\n\n{source} · {r['status']} · {r['total_score']}/5 · 發布：{md(r['published_at'])}\n\n"
+    base += f"Cash: {r.get('cash_score', 0)}/5 · Market: {r.get('market_score', 0)}/5 · {md(r.get('solo_fit', 'UNKNOWN'))}\n\n"
     if not quality_gate(r):
         base += '**LOW CONFIDENCE / NOT ACTIONABLE**\n\n'
     if category == 'money':
@@ -49,8 +55,82 @@ def card(r, category):
     return base + '\n'.join(f'- {label}：{md(value)}' for label, value in detail) + '\n\n'
 
 
-def reports(output, rows, stats, pending, now, *, preview=False, mobile=False):
+def action_queue(rows, clusters, preview=False):
+    actions, used = [], set()
+    current = {r.get('evidence_url') or r['url'] for r in rows if fresh(r)}
+    for row in sorted(rows, key=lambda r: (r.get('cash_score', 0), r.get('validation_value', 0), signal_priority(r)), reverse=True):
+        if not cash_candidate(row) or not fresh(row) or preview:
+            continue
+        url = row.get('evidence_url') or row.get('url')
+        route = row.get('contact_page_or_public_contact')
+        if not route and domain(url) in {'news.ycombinator.com', 'x.com', 'reddit.com'}:
+            route = 'Public source thread (check replies are open): '+url
+        if not url or not route or route == 'UNKNOWN':
+            continue
+        actions.append(('CONTACT', row, 'Explicit commercial request; new or meaningfully updated evidence.', route))
+        used.add(url)
+        if len(actions) == 3:
+            return actions
+    for cluster in clusters:
+        candidates = [r for r in cluster['members'] if eligible(r) and fresh(r) and (r.get('evidence_url') or r['url']) in current - used]
+        if preview or not cluster['worthy'] or not candidates:
+            continue
+        row = max(candidates, key=lambda r: (r.get('market_score', 0), r.get('validation_value', 0)))
+        action = 'VALIDATE' if row.get('market_score', 0) >= 3.5 else 'WATCH'
+        actions.append((action, row, f"{cluster['key']}: {cluster['independent_users']} independent users / {cluster['source_count']} sources in 30 days; verify the shared need.", row.get('contact_page_or_public_contact') or 'Evidence thread; verify an available public reply route before contact.'))
+        used.add(row.get('evidence_url') or row['url'])
+        if len(actions) == 3:
+            break
+    return actions
+
+
+def queue_markdown(actions):
+    body = "## Today's Action Queue\n\n"
+    if not actions:
+        return body + 'NO ACTION REQUIRED TODAY\n\n'
+    for action, row, why, route in actions:
+        body += f"### {action}: {md(row.get('author_or_company') or 'UNKNOWN')}\n\n"
+        for label, value in [('Who', row.get('company') or row.get('author_or_company')), ('Need', row.get('pain_summary') if row.get('pain_summary') != 'UNKNOWN' else row.get('workflow')), ('Evidence', row.get('evidence_url') or row['url']), ('Why now', why), ('What we can offer', row.get('possible_offer')), ('Contact route', route), ('Confidence', 'MEDIUM — rule-based evidence; verify scope, date and identity')]:
+            rendered = '[source]('+str(value).replace('(', '%28').replace(')', '%29')+')' if label == 'Evidence' else md(value)
+            body += f'- {label}: {rendered}\n'
+        body += '\n'
+    return body
+
+
+def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, history_rows=None):
+    rows = enrich_history(rows)
+    historical = enrich_history(history_rows if history_rows is not None else rows)
+    # Similarity penalties require the full history, including negatives absent today.
+    enriched = {r['url']: r for r in historical if r['url']}
+    rows = [dict(r, **{k: enriched[r['url']][k] for k in ('cash_score', 'market_score', 'feedback_penalty')}) if r['url'] in enriched else r for r in rows]
+    clusters = pain_clusters(historical, now)
+    queue = queue_markdown(action_queue(rows, clusters, preview))
+    health = 'DEGRADED' if pending or any(re.search(r'failed|error|timeout|capped|malformed skipped: [1-9]', s, re.I) for s in stats) else 'HEALTHY'
     output.mkdir(parents=True, exist_ok=True)
+    (output/'action_queue.md').write_text(queue, encoding='utf-8')
+    cluster_text = '## Repeated Market Pain\n\n30-day window; unknown publication dates use first seen. Unknown authors do not count as independent users.\n\n'
+    for cluster in clusters:
+        cluster_text += f"### {md(cluster['key'])}\n\n"
+        for key in ('independent_users', 'source_count', 'signal_count', 'workaround_count', 'payment_count', 'validation_value', 'confidence'):
+            cluster_text += f"- {key}: {md(cluster[key])}\n"
+        cluster_text += '- Worth validating: '+('YES' if cluster['worthy'] else 'NO')+'\n'
+        cluster_text += '- Example URLs: '+', '.join('[source]('+ (r.get('evidence_url') or r['url']).replace('(', '%28').replace(')', '%29') +')' for r in cluster['members'][:3])+'\n\n'
+    if not clusters:
+        cluster_text += 'No repeated concrete pain found in the last 30 days.\n\n'
+    (output/'pain_clusters.md').write_text(cluster_text, encoding='utf-8')
+    reasons = Counter()
+    for row in rows:
+        if not quality_gate(row): reasons['Insufficient actionable evidence / score < 3.5'] += 1
+        if re.search(NON_MARKET, row['title'], re.I) and not quality_gate(row, 'pain') and not quality_gate(row, 'money'): reasons['Non-market discussion without concrete user need'] += 1
+        if not quality_gate(row, 'money'): reasons['No explicit commercial request'] += 1
+        if not quality_gate(row, 'pain'): reasons['No concrete user pain'] += 1
+        if row.get('solo_fit') != 'SOLO_FIT': reasons['Solo fit not established / scope too large'] += 1
+        if not eligible(row): reasons['Feedback suppression / too large'] += 1
+        if row.get('feedback_penalty'): reasons['Similar negative feedback penalty'] += 1
+        if not fresh(row): reasons['SEEN / not important / expired age'] += 1
+    summary = '# Filter Summary\n\n'+f'Processed unique: {len(rows)}\nReasons overlap; full evidence remains in CSV.\n\n'
+    summary += '\n'.join(f'- {reason}: {count}' for reason, count in reasons.items())+'\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n'
+    (output/'filter_summary.md').write_text(summary, encoding='utf-8')
     write_csv(output/'opportunities.csv', rows, FIELDS)
     write_csv(output/'pending_intake.csv', pending, ['url', 'reason'])
     sections = {}
@@ -71,32 +151,29 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False):
         else:
             export, fields = selected, FIELDS
         write_csv(output/(filename+'.csv'), export, fields)
-        top = [r for r in selected if preview or fresh(r)][:5]
+        top = [r for r in selected if (preview or fresh(r)) and (cat == 'ledgerdrop' or eligible(r)) and r.get('feedback') not in {'BAD', 'IGNORED'}][:5]
         section = f'## {heading}\n\n' + (''.join(card(r, cat) for r in top) or '今日沒有新的合格訊號；不補入舊資料或示範資料。\n\n')
         section += f'本次合格 {len(selected)} 筆；其餘 SEEN／非重要更新請看 CSV。\n\n'
         sections[cat] = section
         if cat != 'ledgerdrop':
             name = filename + ('_top.md' if cat == 'uk' else '_top5.md')
             (output/name).write_text(section, encoding='utf-8')
-    candidates = sorted([r for r in rows if r['category'].strip(';') and quality_gate(r) and (preview or fresh(r))], key=signal_priority, reverse=True)
+    candidates = sorted([r for r in rows if r['category'].strip(';') and eligible(r) and not r.get('feedback_penalty') and quality_gate(r) and (preview or fresh(r))], key=signal_priority, reverse=True)
     strongest = card(candidates[0], 'uk' if 'uk' in candidates[0]['category'].split(';') else 'money' if 'money' in candidates[0]['category'] else 'pain') if candidates else 'No actionable signal today.\n\n今日無新增或重要更新的可行動訊號。\n\n'
-    actions = []
-    for r in candidates[:2]:
-        actions.append(f"人工查看「{md(r['title'])}」原文與日期，確認需求仍存在；{'確認預算並準備小額試做提案' if r['score_payment_intent'] >= 4 else '整理 3 個訪談問題：頻率、現行解法、成本'}。")
-    if pending:
-        actions.append(f'補上 pending_intake.csv 中 {len(pending)} 筆 URL 的實際貼文文字。')
-    if not actions:
-        actions = ['貼入 1–3 篇具體需求／痛點原文到 input/manual_text.txt，然後重跑。']
-    if mobile:
-        actions = [a.replace('input/manual_text.txt，然後重跑', 'GitHub 的 Radar Intake Issue，等待下次排程') for a in actions]
-        if pending:
-            actions = [a.replace('URL 的實際貼文文字', 'URL 的實際貼文文字（編輯對應 Radar Intake Issue）') for a in actions]
-    report = '# Opportunity Radar\n\n' + f'執行時間 UTC：{now}。評分為保守規則估計，所有分數 0–5；total 為五項平均。\n\n'
+    report = '# Opportunity Radar\n\n'+f'**{health}**\n\n' + f'執行時間 UTC：{now}。評分為保守規則估計，所有分數 0–5；total 為五項平均。\n\n'
     if preview:
         report += '> FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。\n\n'
     else:
         report += '[查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)\n\n'
-    report += ''.join(sections.values()) + '## 🚨 Strongest Signal Today\n\n' + strongest
-    report += '## 🎯 Recommended Action\n\n' + '\n'.join(f'{i}. {a}' for i, a in enumerate(actions[:3], 1))
-    report += '\n\n## Source health\n\n' + '\n'.join('- '+md(s) for s in stats) + f'\n- Pending intake: {len(pending)}\n'
+    report += queue + '## Cash Now\n\n' + sections['money']
+    worthy = [c for c in clusters if c['worthy']]
+    report += '## Repeated Market Pain\n\n' + ('\n'.join(f"- {md(c['key'])}: {c['independent_users']} independent users; {c['signal_count']} signals; {md(c['confidence'])}" for c in worthy[:5]) if worthy else 'No cluster meets the independent-evidence gate.') + '\n\n[30-day evidence](pain_clusters.md)\n\n'
+    report += '## LedgerDrop\n\n' + sections['ledgerdrop']
+    report += '## System Health\n\n'+health+'\n\n'+'\n'.join('- '+md(s) for s in stats)+'\n\n[Filter summary](filter_summary.md) · [Full CSV](opportunities.csv)\n\n'
+    report += '## 🚨 Strongest Signal Today\n\n' + strongest
+    report += '## 🎯 Recommended Action\n\n' + ('See Today\'s Action Queue above.' if action_queue(rows, clusters, preview) else 'NO ACTION REQUIRED TODAY')
+    report += '\n\n' + sections['uk'] + sections['pain']
+    if preview:
+        for name in ('pain_clusters.md', 'filter_summary.md', 'opportunities.csv'):
+            report = report.replace(']('+name+')', '](../'+name+')')
     (output/'daily_report.md').write_text(report, encoding='utf-8')

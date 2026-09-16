@@ -18,7 +18,8 @@ need_type pain_summary current_workaround payment_signal pain_signal saas_signal
 score_authenticity score_payment_intent score_pain_strength score_user_fit score_saas_potential
 total_score reason status first_seen_at last_seen_at company website contact_page_or_public_contact
 possible_offer competitor workflow feature_request potential_tester important_update
-evidence_url evidence_text buyer_type deadline'''.split()
+evidence_url evidence_text buyer_type deadline cash_score market_score solo_fit
+feedback feedback_at feedback_issue validation_value feedback_penalty pain_cluster'''.split()
 SCORES = [f for f in FIELDS if f.startswith('score_')]
 NEEDS = {
     'document/data processing': r'invoices?|receipts?|expenses?|bookkeeping|pdf|ocr|data entry|manual entry|financial documents?|document extraction',
@@ -195,7 +196,8 @@ def classify(raw):
         r['category'] += ';uk'
     if qualified and concrete and personal_pain and match(r'invoice|receipt|expense|bookkeeping|pdf|spreadsheet|manual entry|ocr|financial document|document extraction', text):
         r['category'] += ';ledgerdrop'
-    return r
+    from radar.intelligence import enrich_history
+    return enrich_history([r])[0]
 
 
 def fingerprint(r):
@@ -236,6 +238,8 @@ class History:
         row.update(status='NEW', first_seen_at=now, last_seen_at=now, important_update=False)
         if found:
             key, old = found
+            for field in ('feedback', 'feedback_at', 'feedback_issue'):
+                row[field] = old.get(field, '')
             changed = any(row.get(k) != old.get(k) for k in ('text', 'title', 'company', 'website', 'country', 'deadline'))
             row['status'] = 'UPDATED' if changed else 'SEEN'
             row['first_seen_at'] = old['first_seen_at']
@@ -251,6 +255,15 @@ class History:
             self.rows.append((key, row))
         self.current[key] = row
         return row
+
+    def update_intelligence(self, feedback):
+        from radar.intelligence import enrich_history
+        enriched = enrich_history([r for _, r in self.rows], feedback)
+        self.rows = [(key, row) for (key, _), row in zip(self.rows, enriched)]
+        for key, row in self.rows:
+            self.db.execute('UPDATE history SET payload=? WHERE id=?', (json.dumps(row, ensure_ascii=False), key))
+            if key in self.current:
+                self.current[key] = row
 
     def close(self, commit=True):
         self.db.commit() if commit else self.db.rollback()

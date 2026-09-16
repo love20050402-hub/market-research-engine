@@ -1,6 +1,14 @@
 # DONE — Cloud / Mobile Opportunity Radar
 Date: 2026-09-15
 
+## 2026-09-16 Remote-use quality patch
+
+- 手機 Feedback Issue、Cash／Market 分數、Solo-fit gate、30 天痛點群組與最多 3 件 Action Queue 已整合現有 JSONL／SQLite；CONTACTED 及後續成交狀態不重複推薦。
+- 新增 action_queue.md、pain_clusters.md、filter_summary.md；daily_report 頂端顯示健康狀態，依行動／Cash／重複痛點／LedgerDrop／健康排列。文件驗證需要實際 workflow 證據。
+- 281 筆既有 history 唯讀回測：0 actionable／0 Cash／0 合格群組；法院案例非 actionable，DN Colleges 為 TOO_LARGE。兩份 production history SHA-256 不變。
+- Targeted tests 通過後，完整 50 tests PASS；production data/output SHA-256 不變。actionlint 與 git diff 檢查 PASS。
+- 未新增來源、服務、費用或依賴；排程仍為台灣 07:17。Feedback 為保守規則與人工回報，不等於已驗證市場需求。
+
 ## 1. Windows 關機後，什麼仍能工作
 GitHub 的每日排程、HN / RSS / UK 公開來源收集、Issue intake、同一套 classify/score/dedupe/report，以及 report + JSONL state commit。Windows local workflow 保留，不參與雲端執行。
 

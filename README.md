@@ -6,7 +6,15 @@
 
 1. 打開 [GitHub repository](https://github.com/love20050402-hub/market-research-engine)。
 2. 打開 [output/daily_report.md](https://github.com/love20050402-hub/market-research-engine/blob/main/output/daily_report.md)。
-3. 看 **Strongest Signal Today + Recommended Action**；先確認報告頂端的執行日期。
+3. 看 **Today's Action Queue**；先確認頂端日期與 HEALTHY／DEGRADED／FAILED。沒有合格機會會顯示 `NO ACTION REQUIRED TODAY`。
+
+## 手機回饋
+
+建立 [Radar Feedback Issue](https://github.com/love20050402-hub/market-research-engine/issues/new?template=radar-feedback.md)，填原始證據 `URL:` 與 `STATUS:`：`GOOD / BAD / MAYBE / CONTACTED / REPLIED / TESTER / PAID / IGNORED`。僅採用 owner／member／collaborator；可編輯同一 Issue，最新更新為準，關閉仍保留結果。每次讀最近更新 200 個 Issues；未見於 history 的 URL 要等該訊號匯入才採用。
+
+BAD／IGNORED 壓低同類「對象＋操作」分數；CONTACTED 與後續 REPLIED／TESTER／PAID 不再推薦聯絡；後三者提高群組驗證價值，不繞過證據門檻。GOOD 提高驗證排序，MAYBE 保持中立。
+
+`output/pain_clusters.md` 看最近 30 天群組（未知發布時間用首次看到時間）；至少 3 位不同作者，或 2 個不同來源且有付款／現行解法，才值得驗證。`output/filter_summary.md` 顯示淘汰原因。Cash 與 Market 分開評分；Cash Top 只收有明確商業需求的 SOLO_FIT，複雜招標保留在 CSV。LedgerDrop 只計入具體文件處理痛點。
 
 今日無新增時，可點報告頂端「查看目前最佳候選」，在手機直接看包含 SEEN 的只讀預覽，不需 terminal。
 

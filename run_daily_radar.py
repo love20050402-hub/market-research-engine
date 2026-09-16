@@ -47,7 +47,7 @@ def run(root=BASE, offline=False, imports=(), *, fresh_preview=False, state_file
             except Exception as exc:
                 logger.warning('Import failed %s: %s', Path(path).name, type(exc).__name__)
                 stats.append(f'Import {Path(path).name}: FAILED ({type(exc).__name__})')
-        prepared = []
+        prepared, feedback = [], []
         if not offline:
             auto, health = collect_hn(logger)
             records.extend(auto)
@@ -60,7 +60,7 @@ def run(root=BASE, offline=False, imports=(), *, fresh_preview=False, state_file
                     records.append(row)
             stats.extend(health)
             if github_issues:
-                issue_rows, issue_pending, health = collect_issues(github_issues, logger)
+                issue_rows, issue_pending, health = collect_issues(github_issues, logger, feedback=feedback)
                 records.extend(issue_rows)
                 pending.extend(issue_pending)
                 stats.extend(health)
@@ -79,18 +79,26 @@ def run(root=BASE, offline=False, imports=(), *, fresh_preview=False, state_file
             history.track(row, now)
         for row in prepared:
             history.track(row, now)
+        history.update_intelligence(feedback)
         rows = list(history.current.values())
         stats.append(f'Processed unique: {len(rows)}; malformed skipped: {rejected}')
-        reports(output, rows, stats, pending, now, preview=fresh_preview, mobile=bool(github_issues))
+        reports(output, rows, stats, pending, now, preview=fresh_preview, mobile=bool(github_issues), history_rows=[r for _, r in history.rows])
         if not fresh_preview:
             # Reuse this run's in-memory results: no second collection/history mutation.
-            reports(output/'preview', rows, stats, pending, now, preview=True, mobile=bool(github_issues))
+            reports(output/'preview', rows, stats, pending, now, preview=True, mobile=bool(github_issues), history_rows=[r for _, r in history.rows])
         history.close()
         history = None
         logger.info('Completed: %s unique records, %s pending URLs', len(rows), len(pending))
         return rows
     except Exception as exc:
         logger.error('Run failed: %s; history transaction will roll back', type(exc).__name__)
+        # Never leave yesterday's actionable recommendations under a failed run.
+        try:
+            output.mkdir(parents=True, exist_ok=True)
+            (output/'daily_report.md').write_text('# Opportunity Radar\n\n**FAILED**\n\nUTC: '+utcnow()+'\n\nCore pipeline/history/report failed ('+type(exc).__name__+'). Check Actions logs.\n', encoding='utf-8')
+            (output/'action_queue.md').write_text('# Today\'s Action Queue\n\nFAILED — recommendations unavailable.\n', encoding='utf-8')
+        except OSError:
+            logger.error('Cannot write FAILED report; use workflow status/logs')
         raise
     finally:
         if history is not None:
