@@ -1,14 +1,62 @@
 # Opportunity Radar
 
-執行時間 UTC：2026-09-16T01:25:30+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+**HEALTHY**
+
+執行時間 UTC：2026-09-16T08:30:27+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 [查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)
+
+## Today's Action Queue
+
+NO ACTION REQUIRED TODAY
+
+## Cash Now
 
 ## 💰 Money Radar Top 5
 
 今日沒有新的合格訊號；不補入舊資料或示範資料。
 
 本次合格 0 筆；其餘 SEEN／非重要更新請看 CSV。
+
+## Repeated Market Pain
+
+No cluster meets the independent-evidence gate.
+
+[30-day evidence](pain_clusters.md)
+
+## LedgerDrop
+
+## 🧪 LedgerDrop Validation
+
+今日沒有新的合格訊號；不補入舊資料或示範資料。
+
+本次合格 0 筆；其餘 SEEN／非重要更新請看 CSV。
+
+## System Health
+
+HEALTHY
+
+- Manual text: 0 records
+- HN / willing to pay: OK, 30 records within 30 days
+- HN / need help: OK, 30 records within 30 days
+- HN / manual: OK, 30 records within 30 days
+- HN / looking for alternative: OK, 30 records within 30 days
+- WWR RSS: OK, 2 eligible source records (bounded, no pagination)
+- UK Contracts Finder: OK, 1 eligible source records (bounded, no pagination)
+- GitHub Issues: OK, 0 trusted intake records; 0 pending
+- Processed unique: 119; malformed skipped: 0
+
+[Filter summary](filter_summary.md) · [Full CSV](opportunities.csv)
+
+## 🚨 Strongest Signal Today
+
+No actionable signal today.
+
+今日無新增或重要更新的可行動訊號。
+
+## 🎯 Recommended Action
+
+NO ACTION REQUIRED TODAY
 
 ## 🇬🇧 UK Lead Radar Top 5
 
@@ -22,31 +70,3 @@
 
 本次合格 0 筆；其餘 SEEN／非重要更新請看 CSV。
 
-## 🧪 LedgerDrop Validation
-
-今日沒有新的合格訊號；不補入舊資料或示範資料。
-
-本次合格 0 筆；其餘 SEEN／非重要更新請看 CSV。
-
-## 🚨 Strongest Signal Today
-
-No actionable signal today.
-
-今日無新增或重要更新的可行動訊號。
-
-## 🎯 Recommended Action
-
-1. 貼入 1–3 篇具體需求／痛點原文到 GitHub 的 Radar Intake Issue，等待下次排程。
-
-## Source health
-
-- Manual text: 0 records
-- HN / willing to pay: OK, 30 records within 30 days
-- HN / need help: OK, 30 records within 30 days
-- HN / manual: OK, 30 records within 30 days
-- HN / looking for alternative: OK, 30 records within 30 days
-- WWR RSS: OK, 3 eligible source records (bounded, no pagination)
-- UK Contracts Finder: OK, 1 eligible source records (bounded, no pagination)
-- GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 120; malformed skipped: 0
-- Pending intake: 0
