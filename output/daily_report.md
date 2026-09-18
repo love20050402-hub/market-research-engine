@@ -2,7 +2,7 @@
 
 **HEALTHY**
 
-執行時間 UTC：2026-09-17T01:26:29+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-09-18T01:17:28+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 [查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)
 
@@ -37,7 +37,7 @@ No cluster meets the independent-evidence gate.
 HEALTHY
 
 - Manual text: 0 records
-- HN / looking for freelancer: OK, 0 demand posts / 27 recent hits; source noise removed: 27
+- HN / looking for freelancer: OK, 0 demand posts / 29 recent hits; source noise removed: 29
 - HN / need someone: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / willing to pay: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / paid project: OK, 0 demand posts / 30 recent hits; source noise removed: 30
@@ -46,9 +46,9 @@ HEALTHY
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / looking for alternative: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - WWR RSS: OK, 3 eligible source records (bounded, no pagination)
-- UK Contracts Finder: OK, 1 eligible source records (bounded, no pagination)
+- UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 4; malformed skipped: 0
+- Processed unique: 3; malformed skipped: 0
 
 [Filter summary](filter_summary.md) · [Near misses — diagnostic only](near_misses.md) · [Full CSV](opportunities.csv)
 
@@ -66,7 +66,7 @@ NO ACTION REQUIRED TODAY
 
 今日沒有新的合格訊號；不補入舊資料或示範資料。
 
-本次合格 1 筆；其餘 SEEN／非重要更新請看 CSV。
+本次合格 0 筆；其餘 SEEN／非重要更新請看 CSV。
 
 ## 🔥 Pain Radar Top 5
 
