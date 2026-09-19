@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from radar.core import FIELDS, domain, quality_gate, signal_priority, quality_evidence
+from radar.core import FIELDS, domain, quality_gate, signal_priority, quality_evidence, solution_search_evidence
 from radar.intelligence import enrich_history, eligible, cash_candidate, pain_clusters, date as parse_date
 
 
@@ -37,7 +37,7 @@ def fresh(r):
 
 
 def ranked(rows, category, only_fresh=False, preview=False):
-    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (category != 'money' or cash_candidate(r)) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -r.get('cash_score' if category == 'money' else 'market_score', 0), -r.get('validation_value', 0), *(-v for v in signal_priority(r)), r['url'], r['title']))
+    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (category != 'money' or cash_candidate(r) or (eligible(r) and solution_search_evidence(r))) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -r.get('cash_score' if category == 'money' else 'market_score', 0), -r.get('validation_value', 0), *(-v for v in signal_priority(r)), r['url'], r['title']))
 
 
 def card(r, category):
@@ -121,12 +121,12 @@ def rejection_reasons(row, action_urls=()):
         reasons.append('SELLER_OR_SELF_PROMOTION')
     if row.get('source') == 'weworkremotely' and not cash_candidate(row):
         reasons.append('ROLE_NOT_SCOPED_SERVICE')
-    need = bool(quality_gate(row, 'pain') or ev['request'] or ev['replacement'])
+    need = bool(quality_gate(row, 'pain') or ev['request'] or ev['replacement'] or solution_search_evidence(row))
     if not need:
         reasons.append('UNRECOGNIZED_NEED_REVIEW' if diagnostic_need(row) else 'NO_CONCRETE_BUYER_OR_USER_NEED')
     if not quality_gate(row):
         reasons.append('BELOW_ACTIONABILITY_GATE')
-    if not ev['payment']:
+    if not (ev['payment'] or solution_search_evidence(row)):
         reasons.append('NO_COMMERCIAL_SIGNAL')
     if row.get('solo_fit') != 'SOLO_FIT':
         reasons.append('SOLO_FIT_UNPROVEN')

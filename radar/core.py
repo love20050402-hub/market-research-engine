@@ -102,9 +102,32 @@ def pain_routing_evidence(row):
     return ''
 
 
+def solution_search_evidence(row):
+    """Active category-specific shopping; not proof of budget or paid work."""
+    text = row.get('text', '')
+    if row.get('source_type') in {'job', 'public_job', 'public_tender'} or row.get('source') == 'weworkremotely':
+        return ''
+    if match(r'hire me|available for hire|seeking work|my services|we offer|our services|buy now|sign up|sponsored|referral|show hn:|recruiter|job board|apply now|full.time (?:role|position)|\b(?:i|we) (?:built|launched)|no longer (?:need|looking)|already (?:solved|hired)|no budget|unpaid|for free|free.only|not willing to pay', text):
+        return ''
+    category = r'\b(?:accounting|bookkeeping|inventory|billing|invoic\w*|receipts?|payroll|distribution|crm|project management|time tracking|email marketing|scheduling|transcription|pdf|ocr|expense\w*|spreadsheet\w*)\b'
+    product = r'\b(?:software|tools?|apps?|platform|system|service|provider)\b'
+    search = r'^looking for\b|\b(?:i(?:.m| am)?|we(?:.re| are)?) (?:currently )?looking for\b|\b(?:i|we) need (?:an? |some )?(?:software|tool|app|service)|^(?:please |can (?:anyone|you) )?recommend (?:an? |some )?(?:tool|software|app|service)|^anyone using (?:an? )?good\b|^(?:please )?connect me with (?:an? )?good (?:source|provider)\b'
+    for sentence in re.split(r'(?<=[.!?])\s+|\n', text):
+        if match(r'\b(?:if|imagine|suppose|hypothetical)\b|used to|years ago|not looking|just curious|for research|people (?:are |keep )?looking|users (?:are |keep )?looking', sentence):
+            continue
+        sentence = re.sub(r'"[^"]*"|“[^”]*”', '', sentence).strip()
+        if not match(r'\balternative\b', sentence) and match(search, sentence) and match(category, sentence) and match(product, sentence):
+            return sentence[:600]
+        if match(r'\b(?:looking for|need|recommend)\b.{0,40}\balternative to\s+(?:(?:my|our|the)\s+)?(?:paid\s+)?(?:quickbooks|xero|dext|expensify|freshbooks|sage|shopify|trello|salesforce)\b', sentence):
+            return sentence[:600]
+    return ''
+
+
 def quality_gate(row, category=None):
     if category == 'pain':
         return bool(pain_routing_evidence(row))
+    if category == 'money' and solution_search_evidence(row):
+        return True
     evidence = quality_evidence(row)
     real_need = bool(evidence['pain'] or evidence['request'] or evidence['replacement'])
     if not real_need:
@@ -195,7 +218,8 @@ def classify(raw):
     if match(NON_MARKET, r['title']) and not (personal_pain or evidence['request'] or evidence['replacement']):
         qualified = False
     categories = []
-    if qualified and buyer and pay >= 2 and evidence['payment']:
+    solution_search = solution_search_evidence(r)
+    if (qualified and buyer and pay >= 2 and evidence['payment']) or solution_search:
         categories.append('money')
     routed_pain = pain_routing_evidence(r)
     if routed_pain:
@@ -204,7 +228,7 @@ def classify(raw):
     r.update(category=';'.join(categories), need_type='; '.join(need) or 'UNKNOWN',
              total_score=round((auth+pay+strength+fit+saas)/5, 2),
              pain_summary=evidence['pain'] or routed_pain or 'UNKNOWN', pain_signal=evidence['pain'] or routed_pain or 'UNKNOWN',
-             payment_signal=payment if not negative else 'Explicit negative/free/closed signal; payment not established',
+             payment_signal=('Active solution search (budget unconfirmed): '+solution_search if solution_search and payment == 'UNKNOWN' else payment) if not negative else 'Explicit negative/free/closed signal; payment not established',
              current_workaround=evidence['workaround'] or 'UNKNOWN',
              workflow=excerpt(r['text'], ACTION) if concrete else 'UNKNOWN',
              competitor=excerpt(text, r'quickbooks|xero|dext|expensify|freshbooks|wave|sage'),
