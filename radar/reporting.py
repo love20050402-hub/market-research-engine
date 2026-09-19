@@ -152,6 +152,59 @@ def near_misses(rows, action_urls=()):
     return sorted(candidates, key=lambda item: (float(item[0].get('total_score', 0)), item[0]['url']), reverse=True)[:5]
 
 
+def market_top10(output, rows, now):
+    """Five-axis review export; never changes existing scores or Action Queue gates."""
+    selected = []
+    moment = parse_date(now) or datetime.now(timezone.utc)
+    excluded = r'\b(?:crypto(?:currency)?|bitcoin|ethereum|airdrop|nft|politics|political|election|senator|president|full.time|part.time|salary|resume|résumé|seeking work|promotion|promo|discount)\b|apply now|apply here|join our team|we offer|our services|buy now|sign up|sponsored|referral|\b(?:i|we) (?:built|launched)\b'
+    for row in rows:
+        if (not row.get('url') or not eligible(row) or row.get('source') == 'weworkremotely'
+                or row.get('source_type') in {'job', 'public_job', 'public_tender'}
+                or re.search(excluded, row['title']+' '+row['text'], re.I)
+                or not {'money', 'pain'} & set(row.get('category', '').split(';'))):
+            continue
+        published, deadline = parse_date(row.get('published_at')), parse_date(row.get('deadline'))
+        if (published and not moment-timedelta(days=30) <= published <= moment) or (deadline and deadline <= moment):
+            continue
+        evidence = quality_evidence(row)
+        urgent = next((s for s in re.split(r'(?<=[.!?])\s+', row['text'])
+                       if re.search(r'\b(?:i|we|our|my)\b', s, re.I)
+                       and re.search(r'\b(?:urgent|asap|by tomorrow|this week|blocked|deadline)\b', s, re.I)
+                       and not re.search(r'not urgent|no deadline|not blocked', s, re.I)), '')
+        scores = dict(Pain=float(row['score_pain_strength']) if evidence['pain'] else 0,
+                      WTP=float(row['score_payment_intent']) if evidence['payment'] else 0,
+                      Workaround=5 if evidence['workaround'] and evidence['repeat'] else 3 if evidence['workaround'] else 0,
+                      Urgency=5 if deadline and deadline <= moment+timedelta(days=7) else 3 if urgent else 0,
+                      Fit=float(row['score_user_fit']))
+        action = ('WATCH — already seen; verify new evidence before contacting' if not fresh(row) else
+                  'CONTACT — verify identity, budget and scope before proposing a small pilot' if cash_candidate(row) else
+                  'VALIDATE — ask about frequency, current process and willingness to pay; not yet an Action Queue recommendation')
+        selected.append(dict(title=row['title'], source_url=row['url'], evidence=row['text'], status=row['status'],
+                             **scores, v1_score=round(sum(scores.values())/5, 2),
+                             pain_evidence=evidence['pain'] or 'UNKNOWN',
+                             wtp_evidence=(row['payment_signal'] if row.get('payment_signal') not in ('', 'UNKNOWN', None) else evidence['payment']) if scores['WTP'] else 'UNKNOWN',
+                             workaround_evidence=evidence['workaround'] or 'UNKNOWN',
+                             urgency_evidence=('Deadline: '+row['deadline']) if scores['Urgency'] == 5 else urgent or 'UNKNOWN',
+                             recommended_next_action=action))
+    selected.sort(key=lambda r: (-r['v1_score'], -r['WTP'], -r['Pain'], r['source_url']))
+    top = [dict(rank=i, **r) for i, r in enumerate(selected[:10], 1)]
+    fields = ['rank', 'title', 'source_url', 'evidence', 'status', 'Pain', 'WTP', 'Workaround', 'Urgency', 'Fit', 'v1_score',
+              'pain_evidence', 'wtp_evidence', 'workaround_evidence', 'urgency_evidence', 'recommended_next_action']
+    write_csv(output/'market_top10.csv', top, fields)
+    report = '# Market Radar v1 — Top 10\n\n'+f'UTC: {now}\n\n'
+    report += 'Research shortlist, not validated demand. Each axis is 0–5; v1_score is their equal-weight mean. Missing evidence scores 0. SEEN remains visible for review; existing Action Queue gates are unchanged.\n\n'
+    for row in top:
+        report += f"## {row['rank']}. {md(row['title'])}\n\n[Source]({row['source_url'].replace('(', '%28').replace(')', '%29')}) · {row['status']}\n\n"
+        report += ' · '.join(f'{k}: {row[k]}/5' for k in ['Pain', 'WTP', 'Workaround', 'Urgency', 'Fit', 'v1_score'])+'\n\n'
+        for label in ['evidence', 'pain_evidence', 'wtp_evidence', 'workaround_evidence', 'urgency_evidence', 'recommended_next_action']:
+            report += f'- {label}: {md(row[label])}\n'
+        report += '\n'
+    if not top:
+        report += 'No qualifying market signals.\n'
+    (output/'market_top10.md').write_text(report.rstrip()+'\n', encoding='utf-8')
+    return top
+
+
 def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, history_rows=None):
     rows = enrich_history(rows)
     historical = enrich_history(history_rows if history_rows is not None else rows)
@@ -162,6 +215,7 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
     queue = queue_markdown(action_queue(rows, clusters, preview))
     health = 'DEGRADED' if pending or any(re.search(r'failed|error|timeout|capped|malformed skipped: [1-9]', s, re.I) for s in stats) else 'HEALTHY'
     output.mkdir(parents=True, exist_ok=True)
+    market_top10(output, rows, now)
     (output/'action_queue.md').write_text(queue, encoding='utf-8')
     cluster_text = '## Repeated Market Pain\n\n30-day window; unknown publication dates use first seen. Unknown authors do not count as independent users.\n\n'
     for cluster in clusters:
@@ -232,7 +286,7 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
         report += '> FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。\n\n'
     else:
         report += '[查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)\n\n'
-    report += queue + '## Cash Now\n\n' + sections['money']
+    report += '[Market Radar v1 — Top 10](market_top10.md)\n\n' + queue + '## Cash Now\n\n' + sections['money']
     worthy = [c for c in clusters if c['worthy']]
     report += '## Repeated Market Pain\n\n' + ('\n'.join(f"- {md(c['key'])}: {c['independent_users']} independent users; {c['signal_count']} signals; {md(c['confidence'])}" for c in worthy[:5]) if worthy else 'No cluster meets the independent-evidence gate.') + '\n\n[30-day evidence](pain_clusters.md)\n\n'
     report += '## LedgerDrop\n\n' + sections['ledgerdrop']
@@ -241,6 +295,6 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
     report += '## 🎯 Recommended Action\n\n' + ('See Today\'s Action Queue above.' if action_queue(rows, clusters, preview) else 'NO ACTION REQUIRED TODAY')
     report += '\n\n' + sections['uk'] + sections['pain']
     if preview:
-        for name in ('pain_clusters.md', 'filter_summary.md', 'opportunities.csv', 'near_misses.md'):
+        for name in ('pain_clusters.md', 'filter_summary.md', 'opportunities.csv', 'near_misses.md', 'market_top10.md'):
             report = report.replace(']('+name+')', '](../'+name+')')
     (output/'daily_report.md').write_text(report, encoding='utf-8')

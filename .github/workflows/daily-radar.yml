@@ -65,6 +65,7 @@ jobs:
           git add -- output/preview/daily_report.md
           git add -- output/action_queue.md output/pain_clusters.md output/filter_summary.md output/opportunities.csv
           git add -- output/near_misses.md
+          git add -- output/market_top10.md output/market_top10.csv
           if git diff --cached --quiet; then
             echo 'No report/state changes.'
             exit 0

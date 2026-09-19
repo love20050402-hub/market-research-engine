@@ -2,6 +2,28 @@
 
 免費 GitHub Actions + 本機 Python 3.11+；不需套件、付費 API、Ollama 或信用卡。
 
+## Market Radar v1：最短使用方式
+
+將原文貼入 `input/manual_text.txt`，每則用 `---` 分隔：
+
+```text
+url: https://example.com/original-post
+author: original-author
+We manually process 200 invoices every week. We need someone to automate extraction. Our budget is £500.
+```
+
+執行 `python run_daily_radar.py --offline`，看 `output/market_top10.md` 或 `output/market_top10.csv`。沿用既有 history 去重；Top 10 包含 SEEN 供複查，不重新建議聯絡。排除廣告、職缺、自薦、加密貨幣與政治內容，不補滿十筆。
+
+Pain／WTP／Fit 沿用既有痛點、付款意願和能力匹配分數；Workaround：辨識現行解法 3 分、另有重複頻率 5 分；Urgency：七天內有效 deadline 5 分、明確急迫敘述 3 分；缺證據為 0。v1_score 是五項平均，不替換原本 daily ranking 或 Action Queue 門檻。規則主要支援英文，未知資料不猜測。
+
+範例實跑（獨立資料庫，不污染正式 history）：
+
+```powershell
+python run_daily_radar.py --offline --root output/market-v1-sample --import-file tests/fixtures/radar_samples.json
+```
+
+範例結果在 `output/market-v1-sample/output/market_top10.md` 與 `.csv`。
+
 ## 人在外地，只用手機怎麼看
 
 1. 打開 [GitHub repository](https://github.com/love20050402-hub/market-research-engine)。

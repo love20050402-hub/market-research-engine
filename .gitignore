@@ -5,6 +5,8 @@ output/*
 !output/pain_clusters.md
 !output/filter_summary.md
 !output/near_misses.md
+!output/market_top10.md
+!output/market_top10.csv
 !output/opportunities.csv
 !output/uk_leads.csv
 !output/uk_leads_top.md
