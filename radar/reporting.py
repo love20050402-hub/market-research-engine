@@ -59,7 +59,7 @@ def action_queue(rows, clusters, preview=False):
     actions, used = [], set()
     current = {r.get('evidence_url') or r['url'] for r in rows if fresh(r)}
     for row in sorted(rows, key=lambda r: (r.get('cash_score', 0), r.get('validation_value', 0), signal_priority(r)), reverse=True):
-        if not cash_candidate(row) or not fresh(row) or preview:
+        if not cash_candidate(row) or not quality_gate(row, 'pain') or not fresh(row) or preview:
             continue
         url = row.get('evidence_url') or row.get('url')
         route = row.get('contact_page_or_public_contact')
@@ -121,7 +121,7 @@ def rejection_reasons(row, action_urls=()):
         reasons.append('SELLER_OR_SELF_PROMOTION')
     if row.get('source') == 'weworkremotely' and not cash_candidate(row):
         reasons.append('ROLE_NOT_SCOPED_SERVICE')
-    need = bool(ev['pain'] or ev['request'] or ev['replacement'])
+    need = bool(quality_gate(row, 'pain') or ev['request'] or ev['replacement'])
     if not need:
         reasons.append('UNRECOGNIZED_NEED_REVIEW' if diagnostic_need(row) else 'NO_CONCRETE_BUYER_OR_USER_NEED')
     if not quality_gate(row):
@@ -272,7 +272,7 @@ def reports(output, rows, stats, pending, now, *, preview=False, mobile=False, h
         else:
             export, fields = selected, FIELDS
         write_csv(output/(filename+'.csv'), export, fields)
-        top = [r for r in selected if (preview or fresh(r)) and (cat == 'ledgerdrop' or eligible(r)) and r.get('feedback') not in {'BAD', 'IGNORED'}][:5]
+        top = [r for r in selected if (preview or fresh(r)) and (cat == 'ledgerdrop' or (cat == 'pain' and r.get('feedback') not in {'CONTACTED', 'REPLIED', 'TESTER', 'PAID'}) or eligible(r)) and r.get('feedback') not in {'BAD', 'IGNORED'}][:5]
         section = f'## {heading}\n\n' + (''.join(card(r, cat) for r in top) or '今日沒有新的合格訊號；不補入舊資料或示範資料。\n\n')
         section += f'本次合格 {len(selected)} 筆；其餘 SEEN／非重要更新請看 CSV。\n\n'
         sections[cat] = section

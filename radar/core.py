@@ -75,15 +75,42 @@ def quality_evidence(row):
     return evidence
 
 
+def pain_routing_evidence(row):
+    """Observe current user friction independently of purchase intent and scoring."""
+    text = row.get('text', '')
+    if row.get('source_type') in {'job', 'public_job'} or row.get('source') == 'weworkremotely':
+        return ''
+    if match(r'hire me|available for hire|seeking work|my services|we offer|our services|buy now|sign up|sponsored|referral|show hn:|recruiter|job board|apply now|full.time (?:role|position)|i launched|(?:then )?(?:i|we) built|problem i solved|already solved|no longer (?:need|looking)', text):
+        return ''
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text)
+                 if not match(r'\b(?:imagine|suppose|hypothetical)\b|\bif (?:i|we|you)\b|years ago|used to|when you say|that actually means', s)]
+    current = ' '.join(re.sub(r'"[^"]*"|“[^”]*”', '', s) for s in sentences)
+    personal = match(OWNER, current) or match(r'^love .{1,40} for (?:work|my work)\b', current)
+    workflow = match(BUSINESS_OBJECT + r'|\b(?:chat|context|transcrib\w*|dictat\w*)\b', current)
+    if not personal or not workflow:
+        return ''
+    existing = quality_evidence(dict(row, text=current))['pain']
+    if existing:
+        return existing
+    for sentence in sentences:
+        # Future plans and imagined savings alone are not current friction.
+        if match(r'\b(?:would|could|should|will|i.ll|we.ll)\b', sentence):
+            continue
+        friction = match(PROBLEM + r'|spent .{0,30}hours|more time|keep\w* (?:breaking|losing)|makes me leave|turns what i said|manually\b|by hand', sentence)
+        if friction and (match(REPEAT, current) or match(r'hours|more time|keep\w* (?:breaking|losing)|after most|copy.{0,40}paste|by hand|too expensive|too complicated|cannot|can.t|fails? to', current)):
+            return sentence[:600]
+    return ''
+
+
 def quality_gate(row, category=None):
+    if category == 'pain':
+        return bool(pain_routing_evidence(row))
     evidence = quality_evidence(row)
     real_need = bool(evidence['pain'] or evidence['request'] or evidence['replacement'])
     if not real_need:
         return False
     if category == 'money':
         return bool(evidence['payment'])
-    if category == 'pain':
-        return bool(evidence['pain'])
     return float(row.get('total_score', 0)) >= 3.5 and sum(bool(v) for v in evidence.values()) >= 2
 
 
@@ -170,12 +197,13 @@ def classify(raw):
     categories = []
     if qualified and buyer and pay >= 2 and evidence['payment']:
         categories.append('money')
-    if qualified and personal_pain and concrete:
+    routed_pain = pain_routing_evidence(r)
+    if routed_pain:
         categories.append('pain')
     r.update(zip(SCORES, (auth, pay, strength, fit, saas)))
     r.update(category=';'.join(categories), need_type='; '.join(need) or 'UNKNOWN',
              total_score=round((auth+pay+strength+fit+saas)/5, 2),
-             pain_summary=evidence['pain'] or 'UNKNOWN', pain_signal=evidence['pain'] or 'UNKNOWN',
+             pain_summary=evidence['pain'] or routed_pain or 'UNKNOWN', pain_signal=evidence['pain'] or routed_pain or 'UNKNOWN',
              payment_signal=payment if not negative else 'Explicit negative/free/closed signal; payment not established',
              current_workaround=evidence['workaround'] or 'UNKNOWN',
              workflow=excerpt(r['text'], ACTION) if concrete else 'UNKNOWN',
