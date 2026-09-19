@@ -2,9 +2,11 @@
 
 **HEALTHY**
 
-執行時間 UTC：2026-09-19T01:10:17+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-09-19T08:03:51+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 > FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。
+
+[Market Radar v1 — Top 10](../market_top10.md)
 
 ## Today's Action Queue
 
