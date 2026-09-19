@@ -20,7 +20,7 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 ## Source health
 
 - Manual text: 0 records
-- HN / looking for freelancer: OK, 0 demand posts / 29 recent hits; source noise removed: 29
+- HN / looking for freelancer: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / need someone: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / willing to pay: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / paid project: OK, 0 demand posts / 30 recent hits; source noise removed: 30
