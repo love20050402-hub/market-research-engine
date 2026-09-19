@@ -43,6 +43,34 @@ COMMERCIAL = r'\bbudget\b|willing to pay|looking for (?:a |an )?(?:freelancer|de
 NON_MARKET = r'court|legal dispute|lawsuit|\bvs\.?\s|politic|election|philosoph|academic|news report|scientists|study finds'
 
 
+def marketplace_buyer_evidence(row):
+    """Recognize pasted Upwork client projects, never a source label alone."""
+    empty = {'request': '', 'payment': '', 'route': ''}
+    url = canonical_url(row.get('url', ''))
+    if domain(url) != 'upwork.com' or not re.fullmatch(r'/freelance-jobs/apply/[^/]+_~[0-9]+', urlsplit(url).path):
+        return empty
+    text = row.get('text', '')
+    if match(r'hire me|my services|we offer|our services|available for hire|seeking work|my rate|i charge|sign up|sponsored|referral|no budget|zero budget|unpaid|for free|not willing to pay|no longer (?:need|looking)|position filled|already hired', text):
+        return empty
+    if match(r'full.time|permanent (?:role|position)|employee|salary', text) and not match(r'freelance (?:work|project)|freelancer|one.time project|contract project', text):
+        return empty
+    sentences = [s.strip() for s in re.split(r'(?<=[.!?])\s+|\n', text)
+                 if not match(r'\b(?:if|imagine|suppose|hypothetical)\b|used to|years ago', s)]
+    request = next((s for s in sentences
+                    if match(r'\b(?:i|we) need\b|\blooking for someone\b|\bneed (?:a freelancer|help building|help automating)\b', s)
+                    and match(ACTION + r'|\b(?:build|modify|sync|connect|categorize)\w*', s)
+                    and match(BUSINESS_OBJECT + r'|gmail|google sheets', s)), '')
+    if not request:
+        return empty
+    amount = r'\$\s*\d[\d,]*(?:\.\d{1,2})?'
+    price_range = amount + r'(?:\s*[-–]\s*' + amount + r')?'
+    budget = re.search(r'(?:\bbudget\s*:\s*' + price_range + r'|\bhourly\s*:\s*' + price_range + r'|' + price_range + r'\s*(?:fixed[ -]price|/\s*(?:hour|hr)\b))', ' '.join(sentences), re.I)
+    payment = budget.group() if budget else next((s for s in sentences if match(r'\bpaid (?:one.time|ongoing) project\b', s)), '')
+    if budget and any(float(n.replace(',', '')) <= 0 for n in re.findall(r'\$\s*(\d[\d,]*(?:\.\d{1,2})?)', payment)):
+        payment = ''
+    return {'request': request, 'payment': payment, 'route': url if payment else ''}
+
+
 def quality_evidence(row):
     # ponytail: conservative English clauses; add semantic extraction only with labelled evidence.
     evidence = dict.fromkeys(('pain', 'workaround', 'request', 'payment', 'repeat', 'replacement'), '')
@@ -72,6 +100,9 @@ def quality_evidence(row):
             evidence['payment'] = evidence['payment'] or sentence
         if personal and match(r'looking for (?:an? )?alternative|replace (?:our|my)|switch (?:from|away)|need (?:an? )?alternative', sentence):
             evidence['replacement'] = evidence['replacement'] or sentence
+    marketplace = marketplace_buyer_evidence(row)
+    evidence['request'] = evidence['request'] or marketplace['request']
+    evidence['payment'] = evidence['payment'] or marketplace['payment']
     return evidence
 
 
@@ -203,7 +234,8 @@ def classify(raw):
     ad = match(r'hire me|available for hire|willing to relocate|my services|we offer|our services|buy now|sign up now|sponsored|use my referral|i built|we built|i launched|show hn:', text)
     recruiter = match(r'recruitment agency|recruiter|recruiting agency|job board|apply now|full.time (?:role|position)', text)
     negative = match(r'not willing to pay|won.t pay|no budget|zero budget|unpaid|for free|no longer (?:need|looking)|position filled|already (?:solved|hired)', text)
-    payment = excerpt(text, PAYMENT)
+    marketplace = marketplace_buyer_evidence(r)
+    payment = marketplace['payment'] or excerpt(text, PAYMENT)
     quantified = match(r'\d+\s*(?:hours?|days?|invoices?|receipts?)|every (?:day|week|month)|daily|weekly|monthly', text)
     concrete = bool(need) and match(ACTION, text)
     auth = min(5, int(owner)*2 + int(concrete)*2 + int(quantified or bool(r['url'])))
@@ -219,7 +251,7 @@ def classify(raw):
         qualified = False
     categories = []
     solution_search = solution_search_evidence(r)
-    if (qualified and buyer and pay >= 2 and evidence['payment']) or solution_search:
+    if (qualified and buyer and pay >= 2 and evidence['payment']) or solution_search or (marketplace['request'] and marketplace['payment']):
         categories.append('money')
     routed_pain = pain_routing_evidence(r)
     if routed_pain:
@@ -238,6 +270,8 @@ def classify(raw):
              fit_signal='Small scoped service hypothesis' if fit >= 4 else 'Needs scope review',
              possible_offer='Propose a small paid pilot for: ' + '; '.join(need) if need else 'UNKNOWN',
              reason=f'Rules v3; owner={owner}; buyer request={buyer}; personal pain={personal_pain}; concrete workflow={concrete}; recurring/quantity={quantified}; ad={ad}; recruiter={recruiter}; negative={negative}. Scores are estimates, not verified purchase intent.')
+    if marketplace['route'] and r['contact_page_or_public_contact'] in ('', 'UNKNOWN'):
+        r['contact_page_or_public_contact'] = marketplace['route']
     # Region and small-company evidence must both be explicit; a .uk suffix is not proof.
     uk = r['country'].casefold() in ('uk', 'gb', 'united kingdom', 'great britain') or match(r'\b(?:uk|united kingdom|britain|england|scotland|wales|northern ireland)\b', text)
     small = match(r'small (?:business|agency|company|team)|sole trader|independent consultant|local business|\b[1-9][0-9]?[- ]person\b', text)

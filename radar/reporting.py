@@ -4,7 +4,7 @@ import re
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 
-from radar.core import FIELDS, domain, quality_gate, signal_priority, quality_evidence, solution_search_evidence
+from radar.core import FIELDS, domain, quality_gate, signal_priority, quality_evidence, solution_search_evidence, marketplace_buyer_evidence
 from radar.intelligence import enrich_history, eligible, cash_candidate, pain_clusters, date as parse_date
 
 
@@ -37,7 +37,7 @@ def fresh(r):
 
 
 def ranked(rows, category, only_fresh=False, preview=False):
-    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (category != 'money' or cash_candidate(r) or (eligible(r) and solution_search_evidence(r))) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -r.get('cash_score' if category == 'money' else 'market_score', 0), -r.get('validation_value', 0), *(-v for v in signal_priority(r)), r['url'], r['title']))
+    return sorted((r for r in rows if category in r['category'].split(';') and (category not in ('money', 'pain') or quality_gate(r, category)) and (category != 'money' or cash_candidate(r) or (eligible(r) and (solution_search_evidence(r) or marketplace_buyer_evidence(r)['payment']))) and (not only_fresh or fresh(r))), key=lambda r: (0 if preview else -int(fresh(r)), -r.get('cash_score' if category == 'money' else 'market_score', 0), -r.get('validation_value', 0), *(-v for v in signal_priority(r)), r['url'], r['title']))
 
 
 def card(r, category):
@@ -59,15 +59,24 @@ def action_queue(rows, clusters, preview=False):
     actions, used = [], set()
     current = {r.get('evidence_url') or r['url'] for r in rows if fresh(r)}
     for row in sorted(rows, key=lambda r: (r.get('cash_score', 0), r.get('validation_value', 0), signal_priority(r)), reverse=True):
-        if not cash_candidate(row) or not quality_gate(row, 'pain') or not fresh(row) or preview:
+        if not fresh(row) or preview:
+            continue
+        marketplace = marketplace_buyer_evidence(row)
+        marketplace_route = (all(marketplace.values()) and eligible(row) and row.get('solo_fit') == 'SOLO_FIT'
+                             and not row.get('feedback_penalty')
+                             and not re.search(r'full.time|permanent (?:role|position)|\bemployee\b|sign.up fee|registration fee|pay (?:us|a fee)|send (?:money|crypto)|guaranteed (?:income|returns)', row.get('text', ''), re.I))
+        pain_route = cash_candidate(row) and quality_gate(row, 'pain')
+        if not (marketplace_route or pain_route):
             continue
         url = row.get('evidence_url') or row.get('url')
-        route = row.get('contact_page_or_public_contact')
+        route = marketplace['route'] if marketplace_route else row.get('contact_page_or_public_contact')
         if not route and domain(url) in {'news.ycombinator.com', 'x.com', 'reddit.com'}:
             route = 'Public source thread (check replies are open): '+url
         if not url or not route or route == 'UNKNOWN':
             continue
-        actions.append(('CONTACT', row, 'Explicit commercial request; new or meaningfully updated evidence.', route))
+        why = ('Route B — paid marketplace project: explicit payment, concrete deliverable, SOLO_FIT and project application URL; human review only.'
+               if marketplace_route else 'Route A — qualified pain and commercial evidence; SOLO_FIT and contact route; human review only.')
+        actions.append(('CONTACT', row, why, route))
         used.add(url)
         if len(actions) == 3:
             return actions
