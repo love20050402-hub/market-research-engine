@@ -1,21 +1,21 @@
 # Filter Summary
 
-Processed unique: 3
+Processed unique: 5
 Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope precede score, recurrence and SEEN.
 
 ## Primary reasons (exclusive)
 
-- ROLE_NOT_SCOPED_SERVICE: 3
-- TOTAL: 3
+- ROLE_NOT_SCOPED_SERVICE: 5
+- TOTAL: 5
 
 ## Secondary reasons (overlapping)
 
-- NO_CONCRETE_BUYER_OR_USER_NEED: 3
-- BELOW_ACTIONABILITY_GATE: 3
-- SOLO_FIT_UNPROVEN: 3
-- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 3
-- NO_COMMERCIAL_SIGNAL: 2
-- SEEN_OR_EXPIRED: 2
+- NO_CONCRETE_BUYER_OR_USER_NEED: 5
+- BELOW_ACTIONABILITY_GATE: 5
+- SOLO_FIT_UNPROVEN: 5
+- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 5
+- NO_COMMERCIAL_SIGNAL: 4
+- SEEN_OR_EXPIRED: 3
 
 ## Source health
 
@@ -28,15 +28,17 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 - HN / is there a tool: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / looking for alternative: OK, 0 demand posts / 30 recent hits; source noise removed: 30
-- WWR RSS: OK, 3 eligible source records (bounded, no pagination)
+- WWR RSS: OK, 5 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 3; malformed skipped: 0
+- Processed unique: 5; malformed skipped: 0
 
 ## Per-record diagnosis
 
 | URL | Primary | Secondary |
 | --- | --- | --- |
-| https://weworkremotely.com/remote-jobs/bright-tax-client-success-manager-1 | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/imerit-video-data-annotator | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/animalz-developmental-content-editor | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/bright-tax-client-success-manager-1 | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://weworkremotely.com/remote-jobs/recruitment-circle-gmbh-werkstudent-in-im-headhunting | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://weworkremotely.com/remote-jobs/geopro-labs-inc-head-of-operations-shopify-app-portfolio | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
