@@ -157,7 +157,7 @@ def solution_search_evidence(row):
 def quality_gate(row, category=None):
     if category == 'pain':
         return bool(pain_routing_evidence(row))
-    if category == 'money' and solution_search_evidence(row):
+    if category == 'money' and row.get('source') != 'github_issues' and solution_search_evidence(row):
         return True
     evidence = quality_evidence(row)
     real_need = bool(evidence['pain'] or evidence['request'] or evidence['replacement'])
@@ -256,6 +256,8 @@ def classify(raw):
     routed_pain = pain_routing_evidence(r)
     if routed_pain:
         categories.append('pain')
+    if r['source'] == 'github_issues' and not evidence['payment']:
+        categories = [category for category in categories if category != 'money']
     r.update(zip(SCORES, (auth, pay, strength, fit, saas)))
     r.update(category=';'.join(categories), need_type='; '.join(need) or 'UNKNOWN',
              total_score=round((auth+pay+strength+fit+saas)/5, 2),

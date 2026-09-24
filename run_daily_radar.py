@@ -7,6 +7,7 @@ from pathlib import Path
 from radar.core import History, JsonHistory, classify, utcnow
 from radar.intake import collect_hn, load_records, manual_records
 from radar.github_intake import collect_issues
+from radar.github_public import collect_public_issues
 from radar.public_sources import collect_public_sources
 from radar.reporting import reports
 
@@ -58,6 +59,9 @@ def run(root=BASE, offline=False, imports=(), *, fresh_preview=False, state_file
                     prepared.append(row)  # Validated structured official procurement, not user-supplied scores.
                 else:
                     records.append(row)
+            stats.extend(health)
+            public_issues, health = collect_public_issues(logger)
+            records.extend(public_issues)
             stats.extend(health)
             if github_issues:
                 issue_rows, issue_pending, health = collect_issues(github_issues, logger, feedback=feedback)
