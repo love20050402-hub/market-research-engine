@@ -2,7 +2,7 @@
 
 **DEGRADED**
 
-執行時間 UTC：2026-09-30T02:08:02+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-10-01T02:09:36+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 [查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)
 
@@ -39,7 +39,7 @@ No cluster meets the independent-evidence gate.
 DEGRADED
 
 - Manual text: 0 records
-- HN / looking for freelancer: OK, 0 demand posts / 28 recent hits; source noise removed: 28
+- HN / looking for freelancer: OK, 0 demand posts / 24 recent hits; source noise removed: 24
 - HN / need someone: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / willing to pay: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / paid project: OK, 0 demand posts / 30 recent hits; source noise removed: 30
