@@ -23,7 +23,7 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 - HN / is there a tool: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / looking for alternative: OK, 0 demand posts / 30 recent hits; source noise removed: 30
-- WWR RSS: FAILED (ValueError)
+- WWR RSS: OK, 0 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub public issues: raw=40; eligible=0; failures=0
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
