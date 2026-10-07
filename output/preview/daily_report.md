@@ -2,7 +2,7 @@
 
 **HEALTHY**
 
-執行時間 UTC：2026-10-06T02:58:32+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-10-07T02:23:49+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 > FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。
 
@@ -46,12 +46,12 @@ HEALTHY
 - HN / need help with: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / is there a tool: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
-- HN / looking for alternative: OK, 0 demand posts / 30 recent hits; source noise removed: 30
-- WWR RSS: OK, 0 eligible source records (bounded, no pagination)
+- HN / looking for alternative: OK, 1 demand posts / 30 recent hits; source noise removed: 29
+- WWR RSS: OK, 1 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub public issues: raw=40; eligible=0; failures=0
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 0; malformed skipped: 0
+- Processed unique: 2; malformed skipped: 0
 
 [Filter summary](../filter_summary.md) · [Near misses — diagnostic only](../near_misses.md) · [Full CSV](../opportunities.csv)
 
