@@ -1,20 +1,22 @@
 # Filter Summary
 
-Processed unique: 2
+Processed unique: 3
 Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope precede score, recurrence and SEEN.
 
 ## Primary reasons (exclusive)
 
+- ROLE_NOT_SCOPED_SERVICE: 2
 - BELOW_ACTIONABILITY_GATE: 1
-- ROLE_NOT_SCOPED_SERVICE: 1
-- TOTAL: 2
+- TOTAL: 3
 
 ## Secondary reasons (overlapping)
 
-- NO_COMMERCIAL_SIGNAL: 2
-- SOLO_FIT_UNPROVEN: 2
-- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 2
-- BELOW_ACTIONABILITY_GATE: 1
+- NO_COMMERCIAL_SIGNAL: 3
+- SOLO_FIT_UNPROVEN: 3
+- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 3
+- SEEN_OR_EXPIRED: 2
+- BELOW_ACTIONABILITY_GATE: 2
+- NO_CONCRETE_BUYER_OR_USER_NEED: 1
 
 ## Source health
 
@@ -27,15 +29,16 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 - HN / is there a tool: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / looking for alternative: OK, 1 demand posts / 30 recent hits; source noise removed: 29
-- WWR RSS: OK, 1 eligible source records (bounded, no pagination)
+- WWR RSS: OK, 2 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub public issues: raw=40; eligible=0; failures=0
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 2; malformed skipped: 0
+- Processed unique: 3; malformed skipped: 0
 
 ## Per-record diagnosis
 
 | URL | Primary | Secondary |
 | --- | --- | --- |
-| https://news.ycombinator.com/item?id=49980793 | BELOW_ACTIONABILITY_GATE | NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
-| https://weworkremotely.com/remote-jobs/semaphore-senior-product-engineer | ROLE_NOT_SCOPED_SERVICE | BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://news.ycombinator.com/item?id=49980793 | BELOW_ACTIONABILITY_GATE | NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/simpletiger-content-coordinator-u-s-based-remote-contractor | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/semaphore-senior-product-engineer | ROLE_NOT_SCOPED_SERVICE | BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
