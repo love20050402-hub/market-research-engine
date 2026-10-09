@@ -13,8 +13,8 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 
 - NO_COMMERCIAL_SIGNAL: 3
 - SOLO_FIT_UNPROVEN: 3
+- SEEN_OR_EXPIRED: 3
 - NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 3
-- SEEN_OR_EXPIRED: 2
 - BELOW_ACTIONABILITY_GATE: 2
 - NO_CONCRETE_BUYER_OR_USER_NEED: 1
 
@@ -40,5 +40,5 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 | URL | Primary | Secondary |
 | --- | --- | --- |
 | https://news.ycombinator.com/item?id=49980793 | BELOW_ACTIONABILITY_GATE | NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
-| https://weworkremotely.com/remote-jobs/simpletiger-content-coordinator-u-s-based-remote-contractor | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/simpletiger-content-coordinator-u-s-based-remote-contractor | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://weworkremotely.com/remote-jobs/semaphore-senior-product-engineer | ROLE_NOT_SCOPED_SERVICE | BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
