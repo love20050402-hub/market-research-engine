@@ -24,7 +24,7 @@ LOW CONFIDENCE / NOT ACTIONABLE — diagnostic only, never an Action Queue input
 
 [Evidence](https://news.ycombinator.com/item?id=49980793) · 1.6/5
 
-- Last observed: 2026-10-10T02:20:30+00:00 (30-day history; may not be in today's feed)
+- Last observed: 2026-10-11T01:53:54+00:00 (30-day history; may not be in today's feed)
 - Rejected reason: BELOW_ACTIONABILITY_GATE
 - Secondary: NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER
 - Evidence to review: UNKNOWN
