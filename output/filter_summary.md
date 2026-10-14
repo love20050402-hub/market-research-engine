@@ -1,20 +1,21 @@
 # Filter Summary
 
-Processed unique: 1
+Processed unique: 2
 Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope precede score, recurrence and SEEN.
 
 ## Primary reasons (exclusive)
 
-- ROLE_NOT_SCOPED_SERVICE: 1
-- TOTAL: 1
+- ROLE_NOT_SCOPED_SERVICE: 2
+- TOTAL: 2
 
 ## Secondary reasons (overlapping)
 
-- BELOW_ACTIONABILITY_GATE: 1
-- NO_COMMERCIAL_SIGNAL: 1
-- SOLO_FIT_UNPROVEN: 1
+- BELOW_ACTIONABILITY_GATE: 2
+- NO_COMMERCIAL_SIGNAL: 2
+- SOLO_FIT_UNPROVEN: 2
+- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 2
+- NO_CONCRETE_BUYER_OR_USER_NEED: 1
 - SEEN_OR_EXPIRED: 1
-- NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 1
 
 ## Source health
 
@@ -27,14 +28,15 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 - HN / is there a tool: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / manually doing: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / looking for alternative: OK, 0 demand posts / 30 recent hits; source noise removed: 30
-- WWR RSS: OK, 1 eligible source records (bounded, no pagination)
+- WWR RSS: OK, 2 eligible source records (bounded, no pagination)
 - UK Contracts Finder: OK, 0 eligible source records (bounded, no pagination)
 - GitHub public issues: raw=40; eligible=0; failures=0
 - GitHub Issues: OK, 0 trusted intake records; 0 pending
-- Processed unique: 1; malformed skipped: 0
+- Processed unique: 2; malformed skipped: 0
 
 ## Per-record diagnosis
 
 | URL | Primary | Secondary |
 | --- | --- | --- |
+| https://weworkremotely.com/remote-jobs/toptal-english-screener-1 | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://weworkremotely.com/remote-jobs/semaphore-senior-product-engineer | ROLE_NOT_SCOPED_SERVICE | BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
