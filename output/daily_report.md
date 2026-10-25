@@ -2,7 +2,7 @@
 
 **HEALTHY**
 
-執行時間 UTC：2026-10-24T01:35:02+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-10-25T01:10:37+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 [查看目前最佳候選（含 SEEN，只讀預覽）](preview/daily_report.md)
 
@@ -39,7 +39,7 @@ No cluster meets the independent-evidence gate.
 HEALTHY
 
 - Manual text: 0 records
-- HN / looking for freelancer: OK, 0 demand posts / 26 recent hits; source noise removed: 26
+- HN / looking for freelancer: OK, 0 demand posts / 29 recent hits; source noise removed: 29
 - HN / need someone: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / willing to pay: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / paid project: OK, 0 demand posts / 30 recent hits; source noise removed: 30
@@ -73,21 +73,7 @@ NO ACTION REQUIRED TODAY
 
 ## 🔥 Pain Radar Top 5
 
-### \[macOS v0.16.0 / M3 Pro\] Timeline editing, layer locking, source replacement, and preview issues blocking production work\*
-
-[原文](https://github.com/storytold/effectcraft/issues/2212) · NEW · 2.6/5 · 發布：2026-10-23T08:59:12+00:00
-
-Cash: 0/5 · Market: 2/5 · UNKNOWN
-
-**LOW CONFIDENCE / NOT ACTIONABLE**
-
-- Pain：I am increasingly frustrated because basic editing operations remain unreliable in my workflow.
-- 現在如何解決：UNKNOWN
-- 痛點強度：2/5
-- 是否有人付費：UNKNOWN
-- 現有競爭（僅原文提及）：UNKNOWN
-- SaaS 機會（假設）：Insufficient recurring evidence
-- 我們是否值得追：先訪談確認重複頻率與付費；尚未驗證市場
+今日沒有新的合格訊號；不補入舊資料或示範資料。
 
 本次合格 1 筆；其餘 SEEN／非重要更新請看 CSV。
 

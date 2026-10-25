@@ -2,7 +2,7 @@
 
 **HEALTHY**
 
-執行時間 UTC：2026-10-24T01:35:02+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
+執行時間 UTC：2026-10-25T01:10:37+00:00。評分為保守規則估計，所有分數 0–5；total 為五項平均。
 
 > FRESH PREVIEW：包含 SEEN，僅供人工 review；未修改正式 history 或 daily report。
 
@@ -39,7 +39,7 @@ No cluster meets the independent-evidence gate.
 HEALTHY
 
 - Manual text: 0 records
-- HN / looking for freelancer: OK, 0 demand posts / 26 recent hits; source noise removed: 26
+- HN / looking for freelancer: OK, 0 demand posts / 29 recent hits; source noise removed: 29
 - HN / need someone: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / willing to pay: OK, 0 demand posts / 30 recent hits; source noise removed: 30
 - HN / paid project: OK, 0 demand posts / 30 recent hits; source noise removed: 30
@@ -75,7 +75,7 @@ NO ACTION REQUIRED TODAY
 
 ### \[macOS v0.16.0 / M3 Pro\] Timeline editing, layer locking, source replacement, and preview issues blocking production work\*
 
-[原文](https://github.com/storytold/effectcraft/issues/2212) · NEW · 2.6/5 · 發布：2026-10-23T08:59:12+00:00
+[原文](https://github.com/storytold/effectcraft/issues/2212) · SEEN · 2.6/5 · 發布：2026-10-23T08:59:12+00:00
 
 Cash: 0/5 · Market: 2/5 · UNKNOWN
 

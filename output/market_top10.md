@@ -1,12 +1,12 @@
 # Market Radar v1 — Top 10
 
-UTC: 2026-10-24T01:35:02+00:00
+UTC: 2026-10-25T01:10:37+00:00
 
 Research shortlist, not validated demand. Each axis is 0–5; v1_score is their equal-weight mean. Missing evidence scores 0. SEEN remains visible for review; existing Action Queue gates are unchanged.
 
 ## 1. \[macOS v0.16.0 / M3 Pro\] Timeline editing, layer locking, source replacement, and preview issues blocking production work\*
 
-[Source](https://github.com/storytold/effectcraft/issues/2212) · NEW
+[Source](https://github.com/storytold/effectcraft/issues/2212) · SEEN
 
 Pain: 2.0/5 · WTP: 0/5 · Workaround: 0/5 · Urgency: 0/5 · Fit: 4.0/5 · v1_score: 1.2/5
 
@@ -15,4 +15,4 @@ Pain: 2.0/5 · WTP: 0/5 · Workaround: 0/5 · Urgency: 0/5 · Fit: 4.0/5 · v1_s
 - wtp_evidence: UNKNOWN
 - workaround_evidence: UNKNOWN
 - urgency_evidence: UNKNOWN
-- recommended_next_action: VALIDATE — ask about frequency, current process and willingness to pay; not yet an Action Queue recommendation
+- recommended_next_action: WATCH — already seen; verify new evidence before contacting
