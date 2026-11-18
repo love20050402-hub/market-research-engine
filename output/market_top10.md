@@ -1,6 +1,6 @@
 # Market Radar v1 — Top 10
 
-UTC: 2026-11-17T05:05:26+00:00
+UTC: 2026-11-18T04:21:13+00:00
 
 Research shortlist, not validated demand. Each axis is 0–5; v1_score is their equal-weight mean. Missing evidence scores 0. SEEN remains visible for review; existing Action Queue gates are unchanged.
 
