@@ -1,12 +1,12 @@
 # Market Radar v1 — Top 10
 
-UTC: 2026-11-19T04:12:11+00:00
+UTC: 2026-11-20T03:58:40+00:00
 
 Research shortlist, not validated demand. Each axis is 0–5; v1_score is their equal-weight mean. Missing evidence scores 0. SEEN remains visible for review; existing Action Queue gates are unchanged.
 
 ## 1. Notice: Frequent manual updates across platforms until v1.8.0 release
 
-[Source](https://github.com/Rakosn1cek/Mise-browser/issues/36) · NEW
+[Source](https://github.com/Rakosn1cek/Mise-browser/issues/36) · SEEN
 
 Pain: 2.0/5 · WTP: 0/5 · Workaround: 0/5 · Urgency: 0/5 · Fit: 4.0/5 · v1_score: 1.2/5
 
@@ -15,4 +15,4 @@ Pain: 2.0/5 · WTP: 0/5 · Workaround: 0/5 · Urgency: 0/5 · Fit: 4.0/5 · v1_s
 - wtp_evidence: UNKNOWN
 - workaround_evidence: UNKNOWN
 - urgency_evidence: UNKNOWN
-- recommended_next_action: VALIDATE — ask about frequency, current process and willingness to pay; not yet an Action Queue recommendation
+- recommended_next_action: WATCH — already seen; verify new evidence before contacting
