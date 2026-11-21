@@ -13,11 +13,11 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 ## Secondary reasons (overlapping)
 
 - SOLO_FIT_UNPROVEN: 5
+- SEEN_OR_EXPIRED: 5
 - NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER: 5
 - BELOW_ACTIONABILITY_GATE: 4
 - NO_COMMERCIAL_SIGNAL: 4
 - NO_CONCRETE_BUYER_OR_USER_NEED: 3
-- SEEN_OR_EXPIRED: 2
 - ROLE_NOT_SCOPED_SERVICE: 1
 
 ## Source health
@@ -41,8 +41,8 @@ Exactly one primary outcome per record; NOT_REJECTED means queued. Content/scope
 
 | URL | Primary | Secondary |
 | --- | --- | --- |
-| https://weworkremotely.com/remote-jobs/terac-aml-and-compliance-experts-ai-training-tasks | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
-| https://weworkremotely.com/remote-jobs/lightbox-animation-senior-sets-props-surface-artist | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
-| https://weworkremotely.com/remote-jobs/lightbox-animation-senior-sets-props-concept-artist | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/terac-aml-and-compliance-experts-ai-training-tasks | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/lightbox-animation-senior-sets-props-surface-artist | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
+| https://weworkremotely.com/remote-jobs/lightbox-animation-senior-sets-props-concept-artist | ROLE_NOT_SCOPED_SERVICE | NO_CONCRETE_BUYER_OR_USER_NEED, BELOW_ACTIONABILITY_GATE, NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://weworkremotely.com/remote-jobs/simpletiger-web-developer-wordpress-hubspot-u-s-based-remote-contractor | SCOPE_TOO_LARGE | ROLE_NOT_SCOPED_SERVICE, BELOW_ACTIONABILITY_GATE, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
 | https://github.com/Rakosn1cek/Mise-browser/issues/36 | BELOW_ACTIONABILITY_GATE | NO_COMMERCIAL_SIGNAL, SOLO_FIT_UNPROVEN, SEEN_OR_EXPIRED, NO_QUALIFIED_ACTION_ROUTE_OR_CLUSTER |
